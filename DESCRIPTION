@@ -1,0 +1,26 @@
+Package: gordi
+Type: Package
+Title: ggplot2 based visualization of multivariate models for community ecology
+Version: 0.4.0
+Authors@R: c(
+    person("Branislav", "Kopcan", email = "add", role = "cre", 
+    comment = "Original author and creator of gordi"),
+    person("Stepanka", "Pustkova", email = "add", role = "cre", 
+    comment = "Original author and creator of gordi"),
+    person("Stepanka", "Pustkova", email = "add", role = "cre", 
+    comment = "Original author and creator of gordi"))
+Maintainer: Branislav Kopcan <email>
+Description: Visualize ...
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/dklinges9/mcera5
+BugReports: https://github.com/dklinges9/mcera5/issues
+Imports:
+    tibble,
+    tidync
+Remotes:
+RoxygenNote: 7.2.3
+Suggests: 
+    rmarkdown
+VignetteBuilder: knitr
