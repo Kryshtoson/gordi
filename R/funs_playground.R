@@ -4,6 +4,7 @@ library(ggrepel)
 library(tidyverse)
 library(vegan)
 
+# import
 spe <- read_csv('data/schrankogel/schrankogel_spe.csv')[-1] |> 
     log1p()
 
@@ -11,16 +12,21 @@ env <- read_csv("data/schrankogel/schrankogel_env.csv") |>
     mutate(group = elevation > 2500)
 
 
-m <- rda(spe ~ 1, distance = "bray")
-cca(spe~ elevation, data = env)
-m <- capscale(spe ~ 1, distance = 'bray')
-m <- capscale(spe ~ elevation + annual_temperature , distance = 'bray', data = env)
+# CA
+model <- rda(spe ~ 1, distance = "bray")
 
-m <- decorana(spe)
+# rda(spe~ elevation, data = env) 
+# m <- capscale(spe ~ 1, distance = 'bray')
+# m <- capscale(spe ~ elevation + annual_temperature , distance = 'bray', data = env)
+# m <- decorana(spe)
 
-as_tibble(scores(m))
+# as_tibble()
+scores(m, tidy = T) |> as_tibble()
 
 scores(m)$sites
+scores(m)$species
+
+m$CA[1]
 
 is.null(m$CCA[1])
 
@@ -32,25 +38,28 @@ class(m)
 #' ...
 
 
+
+
 #' =====================================================================
 #' arguments: 
 #' -> model
 #' -> headers 
 
 
-gordi_read <- function(m, env, scaling = 'symm', correlation = F, hill = F){
+gordi_read <- function(model, env, choices = 1:2, scaling = 'symm', correlation = F, hill = F){
 
-    if(class(m)[[1]]  %in% )
+    #if(class(m)[[1]]  %in% )
 
-    if(is.null(m$CCA)){
-        #'... 
-    }
+    #' if(is.null(m$CCA)){
+    #'     #'... 
+    #' }
     
     pass <- list(
-        m = m,
+        model = model,
+        choices = choices,
         explained_variation = m$CA$eig/m$tot.chi,
-        site_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, correlation = correlation, hill = hill)$sites)),
-        species_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, correlation = correlation, hill = hill)$species)),
+        site_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$sites)),
+        species_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species)),
         env = env
     )
     
@@ -59,37 +68,40 @@ gordi_read <- function(m, env, scaling = 'symm', correlation = F, hill = F){
 
 }
 
-gordi_sites <- function(input, label = '', colouring = '', repel_label = T) {
 
-    input #' misto pass
-    # pass <- list(
-    #     m = input$m,
-    #     explained_variation = input$explained_variation,
-    #     site_scores = input$site_scores,
-    #     species_scores = input$species_scores,
-    #     env = input$env
-    # )
+
+gordi_sites <- function(pass, label = '', colouring = '', repel_label = T) {
+
+    # input #' misto pass
+    pass <- list(
+        model = pass$model,
+        choices = pass$choices,
+        explained_variation = pass$explained_variation,
+        site_scores = pass$site_scores,
+        species_scores = pass$species_scores,
+        env = pass$env
+    )
 
     names(pass$site_scores) <- paste0("Axis", 1:2)
     
-    #' here we should control for type of model
-    #' capscale
-    if (class(pass$m)[[1]] == "capscale") {
-        if(){} #' dbRDA osetrit
-        else{
-        actual_labs <- paste0("PCoA", 1:2, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-        }
-    }
-    #' cca
-    else if (class(pass$m)[[1]] == "cca") {
-        actual_labs <- paste0("CCA", 1:2, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-    }
-    #' pca
-    else if (class(pass$m)[[1]] == "pca") {
-        actual_labs <- paste0("PCA", 1:2, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-    }
+    #' #' here we should control for type of model
+    #' #' capscale
+    #' if (class(pass$m)[[1]] == "capscale") {
+    #'     if(){} #' dbRDA osetrit
+    #'     else{
+    #'     actual_labs <- paste0("PCoA", 1:2, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
+    #'     }
+    #' }
+    #' #' cca
+    # else if (class(pass$model)[[1]] == "cca") {
+        actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
+    # }
+    #' #' pca
+    #' else if (class(pass$m)[[1]] == "pca") {
+    #'     actual_labs <- paste0("PCA", 1:2, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
+    #' }
 
-    if (exists(input$p)) { #' is.null(input$p) #' mozna lepsi
+    if (is.null(pass$p)) { #' is.null(input$p) #' mozna lepsi
         p <- bind_cols(env, pass$site_scores) |>
             ggplot(aes(Axis1, Axis2)) +
             theme_bw() +
@@ -127,9 +139,12 @@ gordi_sites <- function(input, label = '', colouring = '', repel_label = T) {
 }
 
 
-obj <- gordi_read(m, env) |>
-    gordi_species()
-    
+
+
+obj <- gordi_read(model, env, choices = 3:4) |>
+    gordi_sites(colouring = 'group', label = 'elevation', repel_label = T)
+
+obj
     
     
     #' gordi_sites(label = "logger_ID", colouring = "group") |>
