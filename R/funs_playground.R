@@ -11,10 +11,10 @@ env <- read_csv("data/schrankogel/schrankogel_env.csv") |>
     mutate(group = elevation > 2500)
 
 
-m <- rda(spe ~ 1, distance = "bray")
-cca(spe~ elevation, data = env)
-m <- capscale(spe ~ 1, distance = 'bray')
-m <- capscale(spe ~ elevation + annual_temperature , distance = 'bray', data = env)
+m <- rda(spe ~ 1, distance = "bray") #cca
+# cca(spe~ elevation, data = env)
+# m <- capscale(spe ~ 1, distance = 'bray')
+# m <- capscale(spe ~ elevation + annual_temperature , distance = 'bray', data = env)
 
 m <- decorana(spe)
 
