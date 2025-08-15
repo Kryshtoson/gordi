@@ -1,7 +1,7 @@
 
 # gordi_sites master version ----------------------------------------------
 
-gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', shape = '', size = '', colouring = '', repel_label = T) {
+gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', shape = '', size = '', colour = '', repel_label = T) {
   
 #' axis names
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
@@ -47,7 +47,8 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
       p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
     }
   }
-  
+
+#' accounting for indiviidual geom scales  
   p <- p + ggnewscale::new_scale("size") 
   p <- p + ggnewscale::new_scale("shape") 
   p <- p + ggnewscale::new_scale("fill")
@@ -66,8 +67,8 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
   
   
   # Detect mapped vs constant aesthetics
-  map_colour <- !identical(colouring, '') && has_name(site_df, colouring)
-  const_colour <- !identical(colouring, '') && !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colouring) || colouring %in% grDevices::colours())
+  map_colour <- !identical(colour, '') && has_name(site_df, colour)
+  const_colour <- !identical(colour, '') && !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours())
   
   map_size <- !identical(size, '') && has_name(site_df, size)
   const_size <- !identical(size, '') && !map_size && is.numeric(size)
@@ -86,7 +87,7 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
   
   # Prepare aes arguments (only mapped)
   aes_args_point <- list(x = quote(Axis_site1), y = quote(Axis_site2))
-  if(map_colour) aes_args_point$colour <- sym(colouring)
+  if(map_colour) aes_args_point$colour <- sym(colour)
   if(map_size) aes_args_point$size <- sym(size)
   if(map_shape) aes_args_point$shape <- sym(shape)
   if(map_fill) aes_args_point$fill <- sym(fill)
@@ -96,8 +97,8 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
   # Prepare constant arguments (mapped first, then defaults if nothing)
   const_args_point<- list()
   if(!map_colour) {
-    if(!identical(colouring, '')) { 
-      const_args_point$colour <- colouring} else {const_args_point$colour <- default_colour}}
+    if(!identical(colour, '')) { 
+      const_args_point$colour <- colour} else {const_args_point$colour <- default_colour}}
   
   if(!map_size) {
     if(!identical(size, '')) {
@@ -119,6 +120,7 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
     if(!identical(stroke, '')){
       const_args_point$stroke <- stroke} else {const_args_point$stroke <- default_stroke}}  
   
+#' plot  
   p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
   
   pass$plot <- p
