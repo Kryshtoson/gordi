@@ -1,7 +1,15 @@
 # gordi_read()
 
-gordi_read <- function(m, env, traits = NULL, choices = 1:2, scaling = 'symm', correlation = F, hill = F){
-  
+# arguments
+gordi_read <- function(m,
+                       env,
+                       traits = NULL,
+                       choices = 1:2,
+                       scaling = 'symm',
+                       correlation = F,
+                       hill = F) {
+
+  # type of ordination 
   type <- case_when(
     inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA) ~ 'PCoA (capscale)', #via capscale
     inherits(m, 'capscale') & !is.null(m$call$distance) ~ 'db-RDA (capscale)',
@@ -11,7 +19,8 @@ gordi_read <- function(m, env, traits = NULL, choices = 1:2, scaling = 'symm', c
     inherits(m, 'cca') & is.null(m$call$distance) & is.null(m$CCA) ~ 'CA', inherits(m, 'cca') ~ 'CCA',
     TRUE ~ paste(class(m), collapse = '/') # writes just one output
   )
-  
+
+  # create pass object 
   pass <- list(
     m = m,
     explained_variation = m$CA$eig/m$tot.chi,
@@ -24,7 +33,7 @@ gordi_read <- function(m, env, traits = NULL, choices = 1:2, scaling = 'symm', c
     species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1]
   )
   
-  
+  # Return pass object
   return(pass)
   
 }
