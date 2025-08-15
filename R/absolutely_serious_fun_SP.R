@@ -15,7 +15,10 @@ env <- read_csv("data/schrankogel/schrankogel_env.csv") |>
 
 trait <- read_xlsx('data/Life_form.xlsx')|>
   select(-SeqID)|>
-  pivot_longer(cols = -FloraVeg.Taxon, names_to = 'form', values_to = 'value')
+  pivot_longer(cols = -FloraVeg.Taxon, names_to = 'form', values_to = 'value') |> 
+  filter(!value == 0) |> 
+  distinct(FloraVeg.Taxon, .keep_all = T) |> 
+  mutate(cont = rep(1:50, length.out = n()))
 
 
 
@@ -87,7 +90,7 @@ case_when(
 #' -> headers 
 
 
-gordi_read <- function(m, env, choices = 1:2, scaling = 'symm', correlation = F, hill = F){
+gordi_read <- function(m, env, traits = NULL, choices = 1:2, scaling = 'symm', correlation = F, hill = F){
   
   type <- case_when(
     inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA) ~ 'PCoA (capscale)', #via capscale
@@ -105,6 +108,7 @@ gordi_read <- function(m, env, choices = 1:2, scaling = 'symm', correlation = F,
     site_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$sites)),
     species_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species)),
     env = env,
+    traits = traits,
     choices = choices,
     type = type,
     species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1]
@@ -117,10 +121,6 @@ gordi_read <- function(m, env, choices = 1:2, scaling = 'symm', correlation = F,
 
 #
 #as_tibble(as.data.frame(scores(m, scaling = 'symm', choices = 1:2, correlation = T, hill = T)$sites), rownames = 'species_names')[1]
-
-gordi_read(m, env, choices = 1:2) -> o
-o$type
-o$plot
 
 m <- rda(spe ~ elevation, distance = 'bray', data = env)
 m <- rda(log1p(spe)) #pca or differently rda(spe ~ 1)
@@ -158,20 +158,7 @@ bind_cols(env, o$site_scores)
 
 
 #
-gordi_sites <- function(pass, label = '', colouring = '', repel_label = T) {
-  
-  # #input #' misto pass
-  # pass <- list(
-  #   m = pass$m,
-  #   explained_variation = pass$explained_variation,
-  #   site_scores = pass$site_scores,
-  #   species_scores = pass$species_scores,
-  #   env = pass$env,
-  #   choices = pass$choices,
-  #   type = pass$type,
-  #   species_names = pass$species_names,
-  #   plot = pass$plot
-  # )
+gordi_sites <- function(pass, label = '', colouring = '', size = '', repel_label = T) {
   
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
@@ -200,28 +187,82 @@ gordi_sites <- function(pass, label = '', colouring = '', repel_label = T) {
         legend.justification = c(1, 1)
       )
   } else {
-  #  p #'... 
+    p <- pass$plot
   }
   
   site_df <- bind_cols(pass$env, pass$site_scores)
   
-  # colour definition
+  
+  #' accounting for colouring
   map_colour <- !identical(colouring, '') && has_name(site_df, colouring)
   is_hex <- grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colouring)
   is_named <- colouring %in% grDevices::colours()
   const_colour <- !identical(colouring, '') && !map_colour && (is_hex || is_named)
   
+  #' accounting for size
+  map_size <- !identical(size, '') && has_name(site_df, size)
+  const_size <- !identical(size, '') && is.numeric(size)
   
-  #' accounting for colouring
-  if (map_colour) {
-    p <- p +
-      geom_point(data = site_df, aes(Axis_site1, Axis_site2, colour = !!sym(colouring)), size = 3)
+  # possibility for two colour scales
+  p <- p + ggnewscale::new_scale_colour()
+  p <- p + ggnewscale::new_scale('size')
+  
+  # if else for colour and size variables
+  if (map_colour && map_size) {
+    p <-  p + geom_point(data = site_df,
+                 aes(Axis_site1, Axis_site2,
+                     colour = !!sym(colouring), 
+                     size = !!sym(size)))
+  
+  } else if (map_colour && const_size) {
+    p <- p + geom_point(data = site_df,
+                        aes(Axis_site1, Axis_site2, 
+                            colour = !!sym(colouring)),
+                        size = size)
+    
+  } else if (const_colour && map_size) {
+    p <- p + geom_point(data = site_df,
+                        aes(Axis_site1, Axis_site2,
+                            size = !!sym(size)),
+                        colour = colouring)
+ 
+  } else if (const_colour && const_size) {
+    p <- p + geom_point(data = site_df,
+                        aes(Axis_site1, Axis_site2),
+                        colour = colouring,
+                        size = size)
+  
+  } else if (map_colour) {
+    p <- p + geom_point(data = site_df,
+                    aes(Axis_site1, Axis_site2,
+                        colour = !!sym(colouring)),
+                    size = 3)
+    
   } else if (const_colour) {
-    p <- p + geom_point(data = site_df, aes(Axis_site1, Axis_site2), size = 3, colour = colouring)  
+    p <- p + geom_point(data = site_df,
+                    aes(Axis_site1, Axis_site2),
+                    colour = colouring,
+                    size = 3)
+    
+  } else if (map_size) {
+    p <- p + geom_point(data = site_df,
+                    aes(Axis_site1, Axis_site2,
+                        size = !!sym(size)),
+                    colour = 'black')
+  
+  } else if (const_size) {
+    p <- p + geom_point(data = site_df,
+                    aes(Axis_site1, Axis_site2),
+                    size = size,
+                    colour = 'black')
   } else {
-    p <- p +
-      geom_point(data = site_df, aes(Axis_site1, Axis_site2), size = 3)
+    p <- p + geom_point(data = site_df,
+                    aes(Axis_site1, Axis_site2), colour = 'black', size = 3)
   }
+  
+  
+  
+  
   
   #' accounting for labeling
   if (label != '') {
@@ -232,6 +273,11 @@ gordi_sites <- function(pass, label = '', colouring = '', repel_label = T) {
     }
   }
   
+  
+  
+  
+  
+  #' pass plot
   pass$plot <- p
   
   return(pass)
@@ -240,34 +286,11 @@ gordi_sites <- function(pass, label = '', colouring = '', repel_label = T) {
 
 
 
- o <- gordi_read(m, env) |> 
-  gordi_sites(colouring = 'group')
-
-o <- gordi_read(m, env) |> 
-  gordi_species()
-
-o <- gordi_read(m, env) |> 
-  gordi_sites() |> 
-  gordi_species()
-
-o$plot
 
 #
 
-gordi_species <- function(pass, label = '', colouring = '', repel_label = T) {
+gordi_species <- function(pass, label = '', colouring = '', size = '', shape = '', repel_label = T) {
   
-  # #input #' misto pass
-  # pass <- list(
-  #   m = pass$m,
-  #   explained_variation = pass$explained_variation,
-  #   site_scores = pass$site_scores,
-  #   species_scores = pass$species_scores,
-  #   env = pass$env,
-  #   choices = pass$choices,
-  #   type = pass$type,
-  #   species_names = pass$species_names,
-  #   plot = pass$plot
-  # )
   
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
@@ -299,16 +322,169 @@ gordi_species <- function(pass, label = '', colouring = '', repel_label = T) {
     p <- pass$plot
   }
   
-  spe_df <- bind_cols(pass$species_scores, pass$species_names)
+  spe_df <- bind_cols(pass$species_names, pass$species_scores)
+  
+  spe_df <- spe_df |> 
+    left_join(pass$traits, by = join_by(!!sym(names(spe_df)[1]) == !!sym(names(pass$traits)[1])))
+  
 
+  
   #' accounting for colouring
-  if (colouring == '') {
-    p <- p +
-      geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2), size = 3)
+  map_colour <- !identical(colouring, '') && has_name(spe_df, colouring)
+  is_hex <- grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colouring)
+  is_named <- colouring %in% grDevices::colours()
+  const_colour <- !identical(colouring, '') && !map_colour && (is_hex || is_named)
+  
+  #' accounting for size
+  map_size <- !identical(size, '') && has_name(spe_df, size)
+  const_size <- !identical(size, '') && is.numeric(size)
+  
+  #' accounting for shape
+  map_shape <- !identical(shape, '') && has_name(spe_df, shape)
+  const_shape <- !identical(shape, '') && is.numeric(shape)
+  
+  
+  # possibility for two colour scales
+  p <- p + ggnewscale::new_scale_colour()
+  p <- p + ggnewscale::new_scale('size')
+  
+  
+  # if else for colour and size variables
+  if (map_colour && map_size && map_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            colour = !!sym(colouring),
+                            size = !!sym(size),
+                            shape = !!sym(shape)))
+  
+  } else if (const_colour && map_size && map_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            size = !!sym(size),
+                            shape = !!sym(shape)),
+                        colour = colouring)
+    
+  } else if (map_colour && const_size && map_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            colour = !!sym(colouring),
+                            shape = !!sym(shape)),
+                        size = size)
+    
+  } else if (map_colour && map_size && const_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            colour = !!sym(colouring),
+                            size = !!sym(size)),
+                        shape = shape)
+    
+  } else if (map_colour && const_size && const_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            colour = !!sym(colouring)),
+                        size = size,
+                        shape = shape)
+  
+  } else if (const_colour && map_size && const_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            size = !!sym(size)),
+                        colour = colouring,
+                        shape = shape)
+    
+  } else if (const_colour && const_size && map_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            shape = !!sym(shape)),
+                        colour = colouring,
+                        size = size)
+    
+  } else if (const_colour && const_size && const_shape) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2),
+                        colour = colouring,
+                        size = size,
+                        shape = shape)
+    
+  } else if (map_colour && map_size) {
+    p <-  p + geom_point(data = spe_df,
+                         aes(Axis_spe1, Axis_spe2,
+                             colour = !!sym(colouring), 
+                             size = !!sym(size)))
+    
+  } else if (map_colour && const_size) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2, 
+                            colour = !!sym(colouring)),
+                        size = size)
+    
+  } else if (const_colour && map_size) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            size = !!sym(size)),
+                        colour = colouring)
+    
+  } else if (const_colour && const_size) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2),
+                        colour = colouring,
+                        size = size)
+    
+  } else if (map_colour && map_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, colour = !!sym(colouring), shape = !!sym(shape)))
+  } else if (map_colour && const_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, colour = !!sym(colouring)), shape = shape)
+  } else if (const_colour && map_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, shape = !!sym(shape)), colour = colouring)
+  } else if (const_colour && const_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2), colour = colouring, shape = shape)
+  } else if (map_size && map_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, size = !!sym(size), shape = !!sym(shape)))
+  } else if (map_size && const_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, size = !!sym(size)), shape = shape)
+  } else if (const_size && map_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, shape = !!sym(shape)), size = size)
+  } else if (const_size && const_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2), size = size, shape = shape)
+  } else if (map_colour) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            colour = !!sym(colouring)),
+                        size = 3,
+                        shape = 16)
+    
+  } else if (const_colour) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2),
+                        colour = colouring,
+                        size = 3,
+                        shape = 16)
+    
+  } else if (map_size) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2,
+                            size = !!sym(size)),
+                        colour = 'black',
+                        shape = 16)
+    
+  } else if (const_size) {
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2),
+                        size = size,
+                        colour = 'black',
+                        shape = 16)
+    
+  } else if (map_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, shape = !!sym(shape)), size = 3)
+  } else if (const_shape) {
+      p <- p + geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2), shape = shape, size = 3)
   } else {
-    p <- p +
-      geom_point(data = spe_df, aes(Axis_spe1, Axis_spe2, colour = !!sym(colouring)), size = 3)
+    p <- p + geom_point(data = spe_df,
+                        aes(Axis_spe1, Axis_spe2), size = 3, shape = 16)
   }
+  
+  
+  
   
   #' accounting for labeling
   if (label != '') {
@@ -328,6 +504,18 @@ gordi_species <- function(pass, label = '', colouring = '', repel_label = T) {
 # gordi_read(m, env) |> 
 #   gordi_species(label = 'species_names')
 
-o <- gordi_read(m, env) |> 
-  gordi_sites() |> 
-  gordi_species()
+gordi_read(m, env, trait) |> 
+  gordi_sites(size = 'elevation') |> 
+  gordi_species(colouring = 'cont')
+
+gordi_read(m, env, trait) |> 
+  gordi_species(colouring = 'form', size = 'cont', shape = 17)
+ 
+gordi_read(m, env, trait) |> 
+  gordi_sites(colouring = 'group', size = 'elevation') |> 
+  gordi_species(label = 'species_names', colouring = 'form', size = 'cont')
+
+
+
+
+
