@@ -306,6 +306,7 @@ gordi_species <- function(pass,
                           stroke = '',
                           linetype = '',
                           linewidth = '',
+                          arrow_size = '',
                           repel_label = T) {
   
   ### axis names used in spe_df 
@@ -433,9 +434,7 @@ gordi_species <- function(pass,
   
   
   ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
-  const_args_segment <- list(
-    arrow = arrow(length = unit(0.3, "cm"))
-  )
+  const_args_segment <- list()
   
   # Add constant arguments for geom_segment() if not mapped
   # colour
@@ -450,8 +449,10 @@ gordi_species <- function(pass,
   # linewidth
   if(!map_linewidth){
     if(!identical(linewidth, '')) {const_args_segment$linewidth <- linewidth} else {const_args_segment$linewidth <- 0.5}}
-      
-      
+  # arrow_size (does not make sense to have map_arrow)
+  const_args_segment$arrow <- arrow(
+    length = unit(
+      if (!identical(arrow_size, '')) as.numeric(arrow_size) else 0.3, "cm"))
       
       
       #' Add the layer
@@ -515,7 +516,7 @@ gordi_read(m, env, trait) |>
 
 
 gordi_read(m, env, trait) |> 
-  gordi_species(colour = 'cont', label = 'species_names', alpha = 1) |> 
+  gordi_species(colour = 'cont', label = 'species_names', alpha = 1, , arrow_size = 0.1) |> 
   gordi_sites(shape = 21, size = 'elevation', fill = 'group') 
 
 
