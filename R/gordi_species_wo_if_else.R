@@ -147,4 +147,5 @@ geom_line()
 
 gordi_read(m, env, trait) |> 
  # gordi_sites(colouring = 'red') |> 
-  gordi_species(colour = 'form', size = 'cont', shape = 'form', alpha = 'cont')
+  gordi_species(colour = 'form', size = 'cont', shape = 'form', alpha = 'cont') +
+  geom_line()

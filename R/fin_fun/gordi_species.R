@@ -1,37 +1,35 @@
-# gordi_species()
-
-# arguments
 gordi_species <- function(pass,
                           label = '',
+                          symbol = c('default', 'point', 'arrow'),
                           colour = '',
                           size = '',
                           shape = '',
                           fill = '',
                           alpha = '',
                           stroke = '',
+                          linetype = '',
+                          linewidth = '',
                           repel_label = T) {
   
-# axis names  
+  ### axis names used in spe_df 
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
-
-# ordination types -> later used in axis labels 
-  if(pass$type == 'CCA'){
-    actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'CA'){
-    actual_labs <- paste0("CA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if (pass$type == 'PCA'){
-    actual_labs <- paste0("PCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type %in% c('PCoA (capscale)', 'PCoA (rda)')){
-    actual_labs <- paste0("PCoA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type %in% c('db-RDA (rda)', 'db-RDA (capscale)')){
-    actual_labs <- paste0("db_RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'RDA constrained'){
-    actual_labs <- paste0("RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  }
-
-#' creates blank plot if this function is used as the first one after gordi_read()
-#' or passes already existing plot
+  
+  
+  ### ordination types -> later used in axis labels 
+  if (pass$type == 'CCA') {actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')} 
+  else if (pass$type == 'CA') {actual_labs <- paste0("CA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if (pass$type == 'PCA') {actual_labs <- paste0("PCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'PCoA') {actual_labs <- paste0("PCoA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'db-RDA') {actual_labs <- paste0("db-RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'RDA') {actual_labs <- paste0("RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if (pass$type == 'DCA') {actual_labs <- paste0('DCA', pass$choices)}
+  else if (pass$type == 'NMDS') {actual_labs <- paste0('NMDS', pass$choices)} 
+  
+  ### plot
+  # Creates blank plot if this function is used as the first one after gordi_read()
+  # or passes already existing plot
+  
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
     p <- ggplot() +
       theme_bw() +
@@ -39,52 +37,59 @@ gordi_species <- function(pass,
       theme(
         text = element_text(size = 15),
         panel.grid = element_blank(),
-        legend.justification = c(1, 1)
-      )
-  } else {
-    p <- pass$plot
-  }
-
-#' create df which is then called in the ggplot
-#' the df exists only in this function (does not pass to the next)
+        legend.justification = c(1, 1))
+  } else {p <- pass$plot}
+  
+  
+  ### create spe_df which is then called in the ggplot (spe_df exists only in this function and does not pass to the next)
   spe_df <- bind_cols(pass$species_names, pass$species_scores)
-
-  #' joins traits - only one trait value for one plant is permitted
-  spe_df <- spe_df |> 
-    left_join(pass$traits, by = join_by(!!sym(names(spe_df)[1]) == !!sym(names(pass$traits)[1])))
   
-  #' Define defaults
-  default_colour <- "black"
-  default_size <- 3
-  default_shape <- 16
-  default_fill <- "white"
-  default_alpha <- 1
-  default_stroke <- 0.5
+  # joins traits - only one trait value for one plant in one column is permitted
+  if (!is.null(pass$traits)) {
+    spe_df <- spe_df |>
+      left_join(pass$traits,
+                by = join_by(!!sym(names(spe_df)[1]) == !!sym(names(pass$traits)[1])))
+  }
   
   
-  # Detect mapped vs constant aesthetics
-    # colour
-  map_colour <- !identical(colour, '') && has_name(spe_df, colour)
-  const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours())
-    # size
-  map_size <- !identical(size, '') && has_name(spe_df, size)
-  const_size <- !map_size && is.numeric(size)
-    # shape
-  map_shape <- !identical(shape, '') && has_name(spe_df, shape)
-  const_shape <- !map_shape && is.numeric(shape)
-    # fill
-  map_fill <- !identical(fill, '') && has_name(spe_df, fill)
-  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())
-    # alpha
+  ### Detect mapped vs constant aesthetics
+  
+  ### arguments working in both, points and arrows (colour, alpha)
+  # colour
+  #' if colour != "" AND ALSO colour represents a colname present in spe_df, then map_colour is TRUE, otherwise is FALSE
+  map_colour <- !identical(colour, '') && has_name(spe_df, colour) 
+  # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
+  const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
+  # alpha
   map_alpha <- !identical(alpha, '') && has_name(spe_df, alpha)
   const_alpha <- !map_alpha && is.numeric(alpha)
-    # stroke
+  
+  ### arguments working only in geom_point
+  # size
+  map_size <- !identical(size, '') && has_name(spe_df, size)
+  const_size <- !map_size && is.numeric(size)
+  # shape
+  map_shape <- !identical(shape, '') && has_name(spe_df, shape)
+  const_shape <- !map_shape && is.numeric(shape)
+  # fill
+  map_fill <- !identical(fill, '') && has_name(spe_df, fill)
+  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())
+  # stroke
   map_stroke <- !identical(stroke, '') && has_name(spe_df, stroke)
-  const_stroke <- !identical(stroke, '') && !map_stroke && is.numeric(stroke)
+  const_stroke <- !map_stroke && is.numeric(stroke)
+  
+  ### arguments working only in geom_segment
+  # linetype
+  map_linetype <- !identical(linetype, '') && has_name(spe_df, linetype)
+  const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,''))
+  # linewidth
+  map_linewidth <- !identical(linewidth, '') && has_name(spe_df, linewidth)
+  const_linewidth <- !map_linewidth && is.numeric(linewidth)
   
   
-  # Prepare aes arguments (only mapped)
+  ### Prepare aes arguments for geom_point()
   aes_args_point <- list(x = quote(Axis_spe1), y = quote(Axis_spe2))
+  
   if(map_colour) aes_args_point$colour <- sym(colour)
   if(map_size) aes_args_point$size <- sym(size)
   if(map_shape) aes_args_point$shape <- sym(shape)
@@ -92,38 +97,81 @@ gordi_species <- function(pass,
   if(map_alpha) aes_args_point$alpha <- sym(alpha)
   if(map_stroke) aes_args_point$stroke <- sym(stroke)
   
-  # Prepare constant arguments (mapped first, then defaults if nothing)
+  
+  ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
   const_args_point <- list()
-    
-    # colour 
-    if(!map_colour){
-      if(!identical(colour, '')){
-        const_args_point$colour <- colour} else {const_args_point$colour <- default_colour}}
-    # size 
-    if(!map_size){
-      if(!identical(size, '')){
-        const_args_point$size <- size} else {const_args_point$size <- default_size}}
-      # shape 
-    if(!map_shape){
-      if(!identical(shape, '')){
-        const_args_point$shape <- shape} else {const_args_point$shape <- default_shape}}
-    # fill 
-    if(!map_fill){
-      if(!identical(fill, '')){
-        const_args_point$fill <- fill} else {const_args_point$fill <- default_fill}}
-    # alpha 
-    if(!map_alpha){
-      if(!identical(alpha, '')){
-        const_args_point$alpha <- alpha} else {const_args_point$alpha <- default_alpha}}
-    # stroke
-    if(!map_stroke){
-      if(!identical(stroke, '')){
-        const_args_point$stroke <- stroke} else {const_args_point$stroke <- default_stroke}}
+  
+  # colour 
+  if(!map_colour){
+    if(!identical(colour, '')) {const_args_point$colour <- colour} else {const_args_point$colour <- 4}}
+  # alpha 
+  if(!map_alpha){
+    if(!identical(alpha, '')) {const_args_point$alpha <- alpha} else {const_args_point$alpha <- 1}}
+  # size 
+  if(!map_size){
+    if(!identical(size, '')) {const_args_point$size <- size} else {const_args_point$size <- 3}}
+  # shape 
+  if(!map_shape){
+    if(!identical(shape, '')) {const_args_point$shape <- shape} else {const_args_point$shape <- 16}}
+  # fill 
+  if(!map_fill){
+    if(!identical(fill, '')) {const_args_point$fill <- fill} else {const_args_point$fill <- "white"}}
+  # stroke
+  if(!map_stroke){
+    if(!identical(stroke, '')){const_args_point$stroke <- stroke} else {const_args_point$stroke <- 0.5}}
   
   
-  # Add the layer
-  p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+  ### Prepare aes arguments for geom_segment()
+  # Start with fixed x/y for the base (0,0) and end at the species scores
+  aes_args_segment <- list(
+    x = 0, y = 0,
+    xend = quote(Axis_spe1),
+    yend = quote(Axis_spe2)
+  )
   
+  if(map_colour) aes_args_segment$colour <- sym(colour)
+  if(map_size) aes_args_segment$linewidth <- sym(linewidth)
+  if(map_linetype) aes_args_segment$linetype <- sym(linetype)
+  if(map_alpha) aes_args_segment$alpha <- sym(alpha)
+  
+  
+  ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
+  const_args_segment <- list(
+    arrow = arrow(length = unit(0.3, "cm"))
+  )
+  
+  # Add constant arguments for geom_segment() if not mapped
+  # colour
+  if(!map_colour){
+    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 4}}
+  # alpha
+  if(!map_alpha){
+    if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 0.6}}
+  # linetype
+  if(!map_linetype){
+    if(!identical(linetype, '')) {const_args_segment$linetype <- linetype} else {const_args_segment$linetype <- 1}}
+  # linewidth
+  if(!map_linewidth){
+    if(!identical(linewidth, '')) {const_args_segment$linewidth <- linewidth} else {const_args_segment$linewidth <- 0.5}}
+  
+  
+  
+  
+  #' Add the layer
+  #' If linear ordination is used (PCA, RDA, PCoA, db-RDA), arrows are used
+  #' if unimodal (CA, CCA, DCA, NMDS), points are used
+  
+  if (is.null(symbol) || any(symbol == "default")) {
+    if (pass$type %in% c('CA', 'CCA', 'DCA', 'NMDS')) {
+      p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+    } else {
+      p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+    }
+  } else if (symbol == 'point') {
+    p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+  } else if (symbol == 'arrow') {
+    p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+  }
   
   
   
@@ -132,7 +180,7 @@ gordi_species <- function(pass,
     if (repel_label) {
       p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
     } else {
-      p <- p + geom_text(data = spe_df, aes(aes(Axis_spe1, Axis_spe2), label = !!sym(label)))
+      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
     }
   }
   
