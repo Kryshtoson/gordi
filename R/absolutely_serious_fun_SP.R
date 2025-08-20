@@ -103,6 +103,8 @@ as_tibble(as.data.frame(scores(m, scaling = 'symm', display = 'species', choices
 #' -> headers 
 
 
+# gordi_read()
+
 gordi_read <- function(m,
                        env = NULL,
                        traits = NULL,
@@ -114,31 +116,36 @@ gordi_read <- function(m,
   # type of ordination 
   type <- case_when(
     inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA) ~ 'PCoA', #via capscale
-    inherits(m, 'capscale') & !is.null(m$call$distance) ~ 'db-RDA',
-    inherits(m, 'rda') & is.null(m$call$distance) & is.null(m$CCA) ~ 'PCA', inherits(m, 'rda') ~ 'RDA',
-    inherits(m, 'cca') & is.null(m$call$distance) & is.null(m$CCA) ~ 'CA', inherits(m, 'cca') ~ 'CCA',
-    inherits(m, 'decorana') ~ 'DCA',
-    inherits(m, 'metaMDS') ~ 'NMDS',
+    inherits(m, 'capscale') & !is.null(m$call$distance)                  ~ 'db-RDA',
+    inherits(m, 'rda') & is.null(m$call$distance) & is.null(m$CCA)       ~ 'PCA',
+    inherits(m, 'rda')                                                   ~ 'RDA',
+    inherits(m, 'cca') & is.null(m$call$distance) & is.null(m$CCA)       ~ 'CA',
+    inherits(m, 'cca')                                                   ~ 'CCA',
     TRUE ~ paste(class(m), collapse = '/') # writes just one output
   )
   
   # create pass object 
   pass <- list(
     m = m,
-    explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {m$CA$eig/m$tot.chi},
-    site_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, display = 'sites', choices = choices, correlation = correlation, hill = hill))),
-    species_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, display = 'species', choices = choices, correlation = correlation, hill = hill))),
+    explained_variation = m$CA$eig/m$tot.chi,
+    site_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$sites)),
+    species_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species)),
+    predictor_scores = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$biplot)),
     env = env,
     traits = traits,
     choices = choices,
     type = type,
-    species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, display = 'species', choices = choices, correlation = correlation, hill = hill)), rownames = 'species_names')[1]
+    species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1],
+    predictor_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$biplot), rownames = 'predictor_names')[1]
   )
   
   # Return pass object
   return(pass)
   
 }
+
+
+
 
 o <- gordi_read(m)
 
@@ -167,6 +174,7 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
   #' axis names
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
+  names(pass$predictor_scores) <- paste0("Axis_pred", 1:2)
   
   #' selection of ordination type
   
@@ -307,12 +315,15 @@ gordi_species <- function(pass,
                           linetype = '',
                           linewidth = '',
                           arrow_size = '',
+                          shortcut = '',
+                          shortcut_length = 3, 
+                          shortcut_colour = '',
                           repel_label = T) {
   
   ### axis names used in spe_df 
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
-  
+  names(pass$predictor_scores) <- paste0("Axis_pred", 1:2)
   
   ### ordination types -> later used in axis labels 
   if (pass$type == 'CCA') {actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')} 
@@ -453,50 +464,146 @@ gordi_species <- function(pass,
   const_args_segment$arrow <- arrow(
     length = unit(
       if (!identical(arrow_size, '')) as.numeric(arrow_size) else 0.3, "cm"))
-      
-      
-      #' Add the layer
-      #' If linear ordination is used (PCA, RDA, PCoA, db-RDA), arrows are used
-      #' if unimodal (CA, CCA, DCA, NMDS), points are used
-      
-      if (is.null(symbol) || any(symbol == "default")) {
-        if (pass$type %in% c('CA', 'CCA', 'DCA', 'NMDS')) {
-          p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
-        } else {
-          p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
-        }
-      } else if (symbol == 'point') {
-        p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
-      } else if (symbol == 'arrow') {
-        p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
-      }
-      
-      
-      
-      #' accounting for labeling
-      if (label != '') {
-        if (repel_label) {
-          p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
-        } else {
-          p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
-        }
-      }
-      
-      # More scales possibility (e.g. one colour in sites and other in species)
+  
+  
+  
+  #' Add the layer
+  #' If linear ordination is used (PCA, RDA, PCoA, db-RDA), arrows are used
+  #' if unimodal (CA, CCA, DCA, NMDS), points are used
+  
+  if (is.null(symbol) || any(symbol == "default")) {
+    if (pass$type %in% c('CA', 'CCA', 'DCA', 'NMDS')) {
+      p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+    } else {
+      p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+    }
+  } else if (symbol == 'point') {
+    p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+  } else if (symbol == 'arrow') {
+    p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+  }
+  
+  
+  
+  #'shortcuts
+  if(!identical(shortcut, '')){
+    #' split species  into individual tokens
+    parts_list <- str_split(spe_df[[1]], '\\s')
+    #' remove tokens like Sect., sect.... 
+    rank_tokens <- c('sect\\.', 'Sect\\.', 'cf\\.')
+    rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
+    parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
+    #' detect subspecies and take epithet after it
+    rx_sub <- regex('^(subsp\\.|ssp\\.)$')
+    has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
+    #'individual genus, species, subspecies
+    genus <- map_chr(parts_list, 1)
+    epithet <- map_chr(parts_list, 2)
+    subsp <- vapply(parts_list, function (x) { i <- match(TRUE, str_detect(x, rx_sub))
+    x[i + 1L]}, character(1))
+    #'shortcuts based on shortcut_length
+    gN <- str_sub(genus, 1, shortcut_length)
+    sN <- str_sub(epithet, 1, shortcut_length)
+    subN <- str_sub(subsp, 1, shortcut_length)
+    
+    if(shortcut == 'upper.lower') {
+      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '.')
+      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
+    } else if(shortcut == 'lower.lower'){
+      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '.')
+      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
+    } else if(shortcut == 'upper.upper'){
+      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '.')
+      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '.')
+    } else if(shortcut == 'upperupper'){
+      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '')
+      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '')
+    } else if(shortcut == 'upper_lower'){
+      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '_')
+      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
+    } else if(shortcut == 'lower_lower'){
+      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '_')
+      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
+    } else if(shortcut == 'upper_upper'){
+      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '_')
+      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '_')
+    } else if(shortcut == 'upper*lower'){
+      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '*')
+      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
+    } else if(shortcut == 'lower*lower'){
+      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '*')
+      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
+    } else if(shortcut == 'upper*upper'){
+      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '*')
+      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '*')
+    } else if(shortcut == 'upper-lower'){
+      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '-')
+      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
+    } else if(shortcut == 'lower-lower'){
+      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '-')
+      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
+    } else if(shortcut == 'upper-upper'){
+      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '-')
+      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '-')
+    } else {
+      warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
+    }
+    
+    
+    #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
+    spe_df <- spe_df|>
+      mutate(short_name = ifelse(has_sub, short_sub, short_non))}
+  
+  map_shortcut_colour <- !identical(shortcut_colour, '') && has_name(spe_df, shortcut_colour)
+  const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())
+  
+  
+  #' accounting for labeling
+  if (identical(label, '') && !identical(shortcut, '')) {
+    if (map_shortcut_colour){
       p <- p + ggnewscale::new_scale_colour()
-      p <- p + ggnewscale::new_scale('size')
-      p <- p + ggnewscale::new_scale('shape')
-      p <- p + ggnewscale::new_scale_fill()
-      p <- p + ggnewscale::new_scale('alpha')
-      p <- p + ggnewscale::new_scale('stroke')
-      
-      
-      # Save plot into pass
-      pass$plot <- p
-      
-      # Return pass
-      return(pass)
-}
+    }
+    map_args_text <- if (map_shortcut_colour){
+      aes(Axis_spe1, Axis_spe2, label = short_name, colour = !!sym(shortcut_colour))
+    } else {
+      aes(Axis_spe1, Axis_spe2, label = short_name)
+    }
+    const_args_text <- list()
+    if (!map_shortcut_colour){
+      if(const_shortcut_colour){
+        const_args_text$colour <- shortcut_colour
+      } else {const_args_text$colour <- 'black'}
+    }
+    
+    if (isTRUE(repel_label)) {
+      p <- p + do.call(geom_text_repel, c(list(data = spe_df, mapping = map_args_text), const_args_text))
+    } else {
+      p <- p + do.call(geom_text, c(list(data = spe_df, mapping = map_args_text), const_args_text))
+    }
+  } else if (!identical(label, '') && identical (shortcut, '')){
+    if (isTRUE(repel_label)){
+      p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
+    } else {
+      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
+    }
+  }
+  
+  # More scales possibility (e.g. one colour in sites and other in species)
+  p <- p + ggnewscale::new_scale_colour()
+  p <- p + ggnewscale::new_scale('size')
+  p <- p + ggnewscale::new_scale('shape')
+  p <- p + ggnewscale::new_scale_fill()
+  p <- p + ggnewscale::new_scale('alpha')
+  p <- p + ggnewscale::new_scale('stroke')
+  
+  
+  # Save plot into pass
+  pass$plot <- p
+  
+  # Return pass
+  return(pass)
+} 
+
 
 
 
@@ -528,3 +635,130 @@ gordi_read(m) |>
 #' zase klasicky, aby umel barvit dynamicky i staticky
 #' zatim ale jenom pro kontinualni prediktory
 
+gordi_predict <- function(
+    pass,
+    label = '',
+    colour = '',
+    alpha = '',
+    arrow_size = '',
+    linewidth = '',
+    linetype = '',
+    repel_label = T) {
+  
+  
+  ### ordination types -> later used in axis labels
+  if (pass$type == 'CCA') {actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if (pass$type == 'CA') {actual_labs <- paste0("CA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if (pass$type == 'PCA') {actual_labs <- paste0("PCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'PCoA') {actual_labs <- paste0("PCoA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'db-RDA') {actual_labs <- paste0("db-RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if(pass$type == 'RDA') {actual_labs <- paste0("RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
+  else if (pass$type == 'DCA') {actual_labs <- paste0('DCA', pass$choices)}
+  else if (pass$type == 'NMDS') {actual_labs <- paste0('NMDS', pass$choices)}
+  
+  
+  ### axis names used in spe_df
+  names(pass$species_scores) <- paste0("Axis_spe", 1:2)
+  names(pass$site_scores) <- paste0("Axis_site", 1:2)
+  names(pass$predictor_scores) <- paste0("Axis_pred", 1:2)
+  
+  
+  ### plot
+  # Creates blank plot if this function is used as the first one after gordi_read()
+  # or passes already existing plot
+  
+  if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
+    p <- ggplot() +
+      theme_bw() +
+      labs(x = actual_labs[1], y = actual_labs[2]) +
+      theme(
+        text = element_text(size = 15),
+        panel.grid = element_blank(),
+        legend.justification = c(1, 1))
+  } else {p <- pass$plot}
+  
+  ### create spe_df which is then called in the ggplot (spe_df exists only in this function and does not pass to the next)
+  pred_df <- bind_cols(pass$predictor_scores, pass$predictor_names)
+  
+  
+  ### Detect mapped vs constant aesthetics
+    # colour
+    #' if colour != "" AND ALSO colour represents a colname present in spe_df, then map_colour is TRUE, otherwise is FALSE
+      map_colour <- !identical(colour, '') && has_name(pred_df, colour) 
+    # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
+      const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
+    # alpha
+      map_alpha <- !identical(alpha, '') && has_name(pred_df, alpha)
+      const_alpha <- !map_alpha && is.numeric(alpha)
+    # linetype
+      map_linetype <- !identical(linetype, '') && has_name(pred_df, linetype)
+      const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,''))
+    # linewidth
+      map_linewidth <- !identical(linewidth, '') && has_name(pred_df, linewidth)
+      const_linewidth <- !map_linewidth && is.numeric(linewidth)
+   
+  
+  ### Prepare aes arguments for geom_segment()
+    # Start with fixed x/y for the base (0,0) and end at the species scores
+      aes_args_segment <- list(
+        x = 0, y = 0,
+        xend = quote(Axis_pred1),
+        yend = quote(Axis_pred2)
+      )
+      
+    if(map_colour) aes_args_segment$colour <- sym(colour)
+    if(map_alpha) aes_args_segment$alpha <- sym(alpha)
+    if(map_linewidth) aes_args_segment$linewidth <- sym(linewidth)
+    if(map_linetype) aes_args_segment$linetype <- sym(linetype)
+  
+      
+  ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
+      const_args_segment <- list()
+      
+    # Add constant arguments for geom_segment() if not mapped
+      # colour
+      if(!map_colour){
+        if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 2}}
+      # alpha
+      if(!map_alpha){
+        if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 1}}
+      # linetype
+      if(!map_linetype){
+        if(!identical(linetype, '')) {const_args_segment$linetype <- linetype} else {const_args_segment$linetype <- 1}}
+      # linewidth
+      if(!map_linewidth){
+        if(!identical(linewidth, '')) {const_args_segment$linewidth <- linewidth} else {const_args_segment$linewidth <- 0.7}}
+      # arrow_size (does not make sense to have map_arrow)
+      const_args_segment$arrow <- arrow(
+        length = unit(
+          if (!identical(arrow_size, '')) as.numeric(arrow_size) else 0.3, "cm"))
+  
+      
+      
+      
+  ### add to plot  
+    p <- p + do.call(geom_segment,
+                   c(list(data = pred_df,
+                          mapping = do.call(aes, aes_args_segment)),
+                     const_args_segment)) +
+      geom_text_repel(data = pred_df, aes(x = Axis_pred1, Axis_pred2, label = predictor_names), colour = 2)
+  
+  ### save plot
+  pass$plot <- p
+  
+  
+  return(pass)
+}
+
+m <- capscale(spe ~ elevation + slope, data = env)
+m <- cca(spe ~ elevation + slope, data = env)
+
+gordi_read(m, env, trait, scaling = 'species', correlation = T, hill = F) |>
+  gordi_species(shortcut = 'upperupper', fill = 'cont', shape = 21, colour = 'black') |> 
+  gordi_predict(label = 'predictor_names',
+                alpha = 0.8, linetype = 1, linewidth = 1)
+
+gordi_read(m, env, trait, scaling = 'sites', correlation = T) |>
+  gordi_sites(size = 'slope', label = 'logger_ID', fill = 'elevation', shape = 21) |> 
+  gordi_predict(label = 'predictor_names',
+                alpha = 0.8, linetype = 1, linewidth = 1)
