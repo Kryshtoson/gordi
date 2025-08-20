@@ -243,11 +243,11 @@ gordi_species <- function(pass,
     } else {
       warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
     }
-  }
-  
-  #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
-  spe_df <- spe_df|>
-    mutate(short_name = ifelse(has_sub, short_sub, short_non))
+    
+    
+    #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
+    spe_df <- spe_df|>
+      mutate(short_name = ifelse(has_sub, short_sub, short_non))}
   
   map_shortcut_colour <- !identical(shortcut_colour, '') && has_name(spe_df, shortcut_colour)
   const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())
