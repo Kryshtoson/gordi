@@ -519,4 +519,12 @@ gordi_read(m, env, trait) |>
   gordi_species(colour = 'cont', label = 'species_names', alpha = 1, , arrow_size = 0.1) |> 
   gordi_sites(shape = 21, size = 'elevation', fill = 'group') 
 
+gordi_read(m) |> 
+  gordi_species(shortcut = 'upper.upper') |>  # Brano musi jeste opravit shortcuts
+  gordi_predict()
+
+#' gordi_predict dodelat !!!
+#' sipecku uz kresli, ale chtelo by to nejak skalovat podle delky osy x (asi na delsi reseni)
+#' zase klasicky, aby umel barvit dynamicky i staticky
+#' zatim ale jenom pro kontinualni prediktory
 

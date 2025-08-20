@@ -298,4 +298,3 @@ gordi_species <- function(pass,
   # Return pass
   return(pass)
 }
-  
