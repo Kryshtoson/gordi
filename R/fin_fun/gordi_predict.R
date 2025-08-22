@@ -6,6 +6,7 @@ gordi_predict <- function(
     arrow_size = '',
     linewidth = '',
     linetype = '',
+    scaling_coefficient = 0.9,
     repel_label = T) {
   
   
@@ -61,12 +62,29 @@ gordi_predict <- function(
   const_linewidth <- !map_linewidth && is.numeric(linewidth)
   
   
+  ### Set scaling coefficient
+  # extract plot frame size (x and y axis lengths)
+  p_build <- ggplot_build(p)
+  
+  plot_range <- c(xmin_plot = p_build$layout$panel_params[[1]]$x.range[1],
+                  xmax_plot = p_build$layout$panel_params[[1]]$x.range[2],
+                  ymin_plot = p_build$layout$panel_params[[1]]$y.range[1],
+                  ymax_plot = p_build$layout$panel_params[[1]]$y.range[2])
+  
+  predictor_range <- c(xmin_pred = min(pred_df[,1]),
+                       xmax_pred = max(pred_df[,1]),
+                       ymin_pred = min(pred_df[,2]),
+                       ymax_pred = max(pred_df[,2]))
+  
+  coef <- (max(abs(plot_range)) / max(abs(predictor_range))) * scaling_coefficient
+  
+  
   ### Prepare aes arguments for geom_segment()
   # Start with fixed x/y for the base (0,0) and end at the species scores
   aes_args_segment <- list(
     x = 0, y = 0,
-    xend = quote(Axis_pred1),
-    yend = quote(Axis_pred2)
+    xend = expr(Axis_pred1 * !!coef),
+    yend = expr(Axis_pred2 * !!coef)
   )
   
   if(map_colour) aes_args_segment$colour <- sym(colour)
@@ -104,8 +122,10 @@ gordi_predict <- function(
                    c(list(data = pred_df,
                           mapping = do.call(aes, aes_args_segment)),
                      const_args_segment)) +
-    # zatim nejde dynamicky menit barva labelu
-    geom_text_repel(data = pred_df, aes(x = Axis_pred1, Axis_pred2, label = predictor_names), colour = 2)
+    geom_text_repel(data = pred_df,
+                    aes(x = Axis_pred1 * coef,
+                        y = Axis_pred2 * coef,
+                        label = predictor_names), colour = 2)
   
   ### save plot
   pass$plot <- p

@@ -697,7 +697,7 @@ gordi_predict <- function(
       map_linewidth <- !identical(linewidth, '') && has_name(pred_df, linewidth)
       const_linewidth <- !map_linewidth && is.numeric(linewidth)
    
-  
+
   ### Prepare aes arguments for geom_segment()
     # Start with fixed x/y for the base (0,0) and end at the species scores
       aes_args_segment <- list(
@@ -762,3 +762,97 @@ gordi_read(m, env, trait, scaling = 'sites', correlation = T) |>
   gordi_sites(size = 'slope', label = 'logger_ID', fill = 'elevation', shape = 21) |> 
   gordi_predict(label = 'predictor_names',
                 alpha = 0.8, linetype = 1, linewidth = 1)
+
+gordi_read(m, env, trait, scaling = 'symmetric', correlation = T) |>
+  gordi_sites(size = 'slope', label = 'logger_ID', fill = 'elevation', shape = 21) |> 
+  gordi_predict(label = 'predictor_names',
+                alpha = 1, linetype = 1, linewidth = 1)
+
+
+# SCALING COEFFICIENT ---------------------
+
+m <- capscale(spe ~ elevation + slope, data = env)
+
+o <- gordi_read(m, scaling = 'sites')
+
+# default predictor scores
+ggplot(o$site_scores) +
+  geom_segment(aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
+               arrow = arrow(length = unit(0.3, 'cm')),
+               colour = 4,
+               alpha = 0.7) +
+  geom_segment(data = o$predictor_scores,
+               aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
+               arrow = arrow(length = unit(0.3, 'cm')),
+               colour = 2,
+               alpha = 1) 
+
+# wo predictor
+p <- ggplot(o$site_scores) +
+  geom_segment(aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
+               arrow = arrow(length = unit(0.3, 'cm')),
+               colour = 4,
+               alpha = 0.7) 
+
+
+# min and max species scores on x and y axis
+sco_x_min <- min(o$species_scores[1]) # min na ose x
+sco_x_max <- max(o$species_scores[1]) # max na ose x
+
+sco_y_min <- min(o$species_scores[2]) # min na ose y
+sco_y_max <- max(o$species_scores[2]) # max na ose y
+
+sco_range <- c(sco_x_min = min(o$species_scores[1]),
+               sco_x_max = max(o$species_scores[1]),
+               sco_y_min = min(o$species_scores[2]),
+               sco_y_max = max(o$species_scores[2]))
+
+abs(sco_range)
+
+# min and max plot frame coordinates on x and y
+p_build <- ggplot_build(p)
+
+plot_x_min <- p_build$layout$panel_params[[1]]$x.range[1] # min na ose x
+plot_x_max <- p_build$layout$panel_params[[1]]$x.range[2] # max na ose x
+
+plot_y_min <- p_build$layout$panel_params[[1]]$y.range[1] # min na ose y
+plot_y_max <- p_build$layout$panel_params[[1]]$y.range[2] # max na ose y
+
+plot_range <- c(plot_x_min = p_build$layout$panel_params[[1]]$x.range[1],
+                plot_x_max = p_build$layout$panel_params[[1]]$x.range[2],
+                plot_y_min = p_build$layout$panel_params[[1]]$y.range[1],
+                plot_y_max = p_build$layout$panel_params[[1]]$y.range[2])
+
+abs(plot_range)
+
+# min value
+b <- max(abs(sco_range)) # x max
+a <- max(abs(plot_range)) # x max
+
+(a/b) * 0.8
+(a / b)
+
+
+# default predictor scores
+ggplot() +
+  geom_segment(data = bind_cols(o$site_scores, env),
+               aes(x = 0, y = 0, xend = CAP1, yend = CAP2, colour = elevation),
+               arrow = arrow(length = unit(0.3, 'cm')),
+               alpha = 0.6) +
+  geom_text_repel(data = bind_cols(o$site_scores, env),
+                  aes(x = CAP1, y = CAP2,
+                      label = as.character(logger_ID)),
+                  colour = 'red') +
+  scale_colour_viridis_c() +
+  ggnewscale::new_scale_color() +
+  geom_segment(data = bind_cols(o$predictor_scores, o$predictor_names),
+               aes(x = 0, y = 0, xend = CAP1 * b, yend = CAP2 * b, colour = predictor_names),
+               arrow = arrow(length = unit(0.3, 'cm')),
+               alpha = 1) +
+  scale_colour_manual(values = c('red', 'purple')) + NULL
+  
+  
+
+
+o |> 
+  gordi_species()
