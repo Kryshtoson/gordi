@@ -1,5 +1,5 @@
 gordi_species <- function(pass,
-                          label = '',
+                          label = TRUE,
                           symbol = c('default', 'point', 'arrow'),
                           colour = '',
                           size = '',
@@ -10,10 +10,7 @@ gordi_species <- function(pass,
                           linetype = '',
                           linewidth = '',
                           arrow_size = '',
-                          shortcut = '',
-                          shortcut_length = 3, 
-                          shortcut_colour = '',
-                          repel_label = T) {
+                          repel_label = FALSE) {
   
   ### axis names used in spe_df 
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
@@ -55,6 +52,8 @@ gordi_species <- function(pass,
                 by = join_by(!!sym(names(spe_df)[1]) == !!sym(names(pass$traits)[1])))
   }
   
+  p <- p + ggnewscale::new_scale_colour() 
+  p <- p + ggnewscale::new_scale_fill()
   
   ### Detect mapped vs constant aesthetics
   
@@ -177,117 +176,22 @@ gordi_species <- function(pass,
   } else if (symbol == 'arrow') {
     p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
   }
-  
-  
-  
-  #'shortcuts
-  if(!identical(shortcut, '')){
-    #' split species  into individual tokens
-    parts_list <- str_split(spe_df[[1]], '\\s')
-    #' remove tokens like Sect., sect.... 
-    rank_tokens <- c('sect\\.', 'Sect\\.', 'cf\\.')
-    rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
-    parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
-    #' detect subspecies and take epithet after it
-    rx_sub <- regex('^(subsp\\.|ssp\\.)$')
-    has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
-    #'individual genus, species, subspecies
-    genus <- map_chr(parts_list, 1)
-    epithet <- map_chr(parts_list, 2)
-    subsp <- vapply(parts_list, function (x) { i <- match(TRUE, str_detect(x, rx_sub))
-    x[i + 1L]}, character(1))
-    #'shortcuts based on shortcut_length
-    gN <- str_sub(genus, 1, shortcut_length)
-    sN <- str_sub(epithet, 1, shortcut_length)
-    subN <- str_sub(subsp, 1, shortcut_length)
-    
-    if(shortcut == 'upper.lower') {
-      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '.')
-      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
-    } else if(shortcut == 'lower.lower'){
-      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '.')
-      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
-    } else if(shortcut == 'upper.upper'){
-      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '.')
-      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '.')
-    } else if(shortcut == 'upperupper'){
-      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '')
-      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '')
-    } else if(shortcut == 'upper_lower'){
-      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '_')
-      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
-    } else if(shortcut == 'lower_lower'){
-      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '_')
-      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
-    } else if(shortcut == 'upper_upper'){
-      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '_')
-      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '_')
-    } else if(shortcut == 'upper*lower'){
-      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '*')
-      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
-    } else if(shortcut == 'lower*lower'){
-      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '*')
-      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
-    } else if(shortcut == 'upper*upper'){
-      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '*')
-      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '*')
-    } else if(shortcut == 'upper-lower'){
-      short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '-')
-      short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
-    } else if(shortcut == 'lower-lower'){
-      short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '-')
-      short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
-    } else if(shortcut == 'upper-upper'){
-      short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '-')
-      short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '-')
-    } else {
-      warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
-    }
-    
-    
-    #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
-    spe_df <- spe_df|>
-      mutate(short_name = ifelse(has_sub, short_sub, short_non))}
-  
-  map_shortcut_colour <- !identical(shortcut_colour, '') && has_name(spe_df, shortcut_colour)
-  const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())
-  
-  
-  #' accounting for labeling
-  if (identical(label, '') && !identical(shortcut, '')) {
-    if (map_shortcut_colour){
-      p <- p + ggnewscale::new_scale_colour()
-    }
-    map_args_text <- if (map_shortcut_colour){
-      aes(Axis_spe1, Axis_spe2, label = short_name, colour = !!sym(shortcut_colour))
-    } else {
-      aes(Axis_spe1, Axis_spe2, label = short_name)
-    }
-    const_args_text <- list()
-    if (!map_shortcut_colour){
-      if(const_shortcut_colour){
-        const_args_text$colour <- shortcut_colour
-      } else {const_args_text$colour <- 'black'}
-    }
-    
-    if (isTRUE(repel_label)) {
-      p <- p + do.call(geom_text_repel, c(list(data = spe_df, mapping = map_args_text), const_args_text))
-    } else {
-      p <- p + do.call(geom_text, c(list(data = spe_df, mapping = map_args_text), const_args_text))
-    }
-  } else if (!identical(label, '') && identical (shortcut, '')){
+
+  # 
+  if (isTRUE(label)){
     if (isTRUE(repel_label)){
-      p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
+      p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black') 
     } else {
-      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = !!sym(label)))
+      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black')
     }
   }
   
+  
   # More scales possibility (e.g. one colour in sites and other in species)
-  p <- p + ggnewscale::new_scale_colour()
+  # p <- p + ggnewscale::new_scale_colour()
+  #p <- p + ggnewscale::new_scale_fill()
   p <- p + ggnewscale::new_scale('size')
   p <- p + ggnewscale::new_scale('shape')
-  p <- p + ggnewscale::new_scale_fill()
   p <- p + ggnewscale::new_scale('alpha')
   p <- p + ggnewscale::new_scale('stroke')
   
@@ -295,6 +199,7 @@ gordi_species <- function(pass,
   # Save plot into pass
   pass$plot <- p
   
+  
   # Return pass
   return(pass)
-} 
+}
