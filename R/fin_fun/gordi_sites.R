@@ -40,6 +40,9 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
     p <- pass$plot
   }
   
+  p <- p + ggnewscale::new_scale_colour()
+  p <- p + ggnewscale::new_scale_fill()
+  
   site_df <- bind_cols(pass$env, pass$site_scores)
   
   #' accounting for labeling
@@ -50,14 +53,6 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
       p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
     }
   }
-  
-  #' accounting for indiviidual geom scales  
-  p <- p + ggnewscale::new_scale("size") 
-  p <- p + ggnewscale::new_scale("shape") 
-  p <- p + ggnewscale::new_scale("fill")
-  p <- p + ggnewscale::new_scale("alpha")
-  p <- p + ggnewscale::new_scale("stroke") 
-  p <- p + ggnewscale::new_scale_colour()
   
   
   # Detect mapped vs constant aesthetics
@@ -116,6 +111,14 @@ gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', sh
   
   #' plot  
   p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
+  
+  #' accounting for indiviidual geom scales 
+  #' p <- p + ggnewscale::new_scale("fill") 
+  #' p <- p + ggnewscale::new_scale_colour()
+  p <- p + ggnewscale::new_scale("size") 
+  p <- p + ggnewscale::new_scale("shape") 
+  p <- p + ggnewscale::new_scale("alpha")
+  p <- p + ggnewscale::new_scale("stroke") 
   
   pass$plot <- p
   
