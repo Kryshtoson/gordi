@@ -1,30 +1,25 @@
+# gordi_sites()
+library(vegan)
+library(tidyverse)
+library(ggrepel)
 
-# gordi_sites master version ----------------------------------------------
-gordi_sites <- function(pass, label = '', fill = '', alpha = '', stroke = '', shape = '', size = '', colour = '', repel_label = T) {
+
+gordi_sites <- function(pass,
+                        label = '',
+                        fill = '',
+                        alpha = '',
+                        stroke = '',
+                        shape = '',
+                        size = '',
+                        colour = '',
+                        repel_label = T) {
   
   #' axis names
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
-  names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   
-  #' selection of ordination type
-  
-  if(pass$type == 'CCA'){
-    actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'CA'){
-    actual_labs <- paste0("CA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if (pass$type == 'PCA'){
-    actual_labs <- paste0("PCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'PCoA'){
-    actual_labs <- paste0("PCoA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'db-RDA'){
-    actual_labs <- paste0("db-RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if(pass$type == 'RDA'){
-    actual_labs <- paste0("RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')
-  } else if (pass$type == 'DCA'){
-    actual_labs <- paste0('DCA', pass$choices)
-  } else if (pass$type == 'NMDS'){
-    actual_labs <- paste0('NMDS', pass$choices)
-  }
+  #' actual labs
+  if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
   
   #' plot set up  
   if (is.null(pass$plot)) { 

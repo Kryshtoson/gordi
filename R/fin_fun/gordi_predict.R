@@ -1,3 +1,9 @@
+# gordi_predict()
+library(vegan)
+library(tidyverse)
+library(ggrepel)
+
+
 gordi_predict <- function(
     pass,
     label = '',
@@ -9,21 +15,17 @@ gordi_predict <- function(
     scaling_coefficient = 0.9,
     repel_label = T) {
   
+  # Check if there are any predictors
+  if (rlang::is_empty(pass$predictor_scores)) {
+    stop("You did not use any predictor. Add some before calling gordi_predict().")
+  }
   
-  ### ordination types -> later used in axis labels
-  if (pass$type == 'CCA') {actual_labs <- paste0("CCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if (pass$type == 'CA') {actual_labs <- paste0("CA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if (pass$type == 'PCA') {actual_labs <- paste0("PCA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if(pass$type == 'PCoA') {actual_labs <- paste0("PCoA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if(pass$type == 'db-RDA') {actual_labs <- paste0("db-RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if(pass$type == 'RDA') {actual_labs <- paste0("RDA", pass$choices, " (", round(pass$explained_variation[1:2]*100, 2), '%)')}
-  else if (pass$type == 'DCA') {actual_labs <- paste0('DCA', pass$choices)}
-  else if (pass$type == 'NMDS') {actual_labs <- paste0('NMDS', pass$choices)}
+  ### ordination axis labels
+  if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
   
   
   ### axis names used in spe_df
-  names(pass$species_scores) <- paste0("Axis_spe", 1:2)
-  names(pass$site_scores) <- paste0("Axis_site", 1:2)
   names(pass$predictor_scores) <- paste0("Axis_pred", 1:2)
   
   
