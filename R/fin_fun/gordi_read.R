@@ -1,9 +1,11 @@
 #' Read ordination output into a standardized structure
 #' 
 #' @description
-#' #' `gordi_read` is the first function in the family of `gordi_`functions. 
+#' `gordi_read` is the first function in the family of `gordi_`functions. 
 #' It takes the output of `rda`, `cca`, `capscale`, `decorana` and `metaMDS` and 
-#' translates in into a format usable by other `gordi_` functions.
+#' translates in into a format usable by other `gordi_` functions. `gordi_read` 
+#' was not tested for partial ordination (with `Condition()`) yet, and axis labels
+#' are the default ones from vegan.
 #'
 #'
 #' @param m An ordination result: object of class `rda`, `cca`, `capscale`,
