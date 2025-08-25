@@ -181,16 +181,3 @@ gordi_colour <- function(pass,
   return(pass)
 }
 
-m <- cca(spe ~ elevation, data = env)
-m <- capscale(spe ~ elevation, data = env)
-
-gordi_read(m, env, traits)|>
-  gordi_species(label = F, symbol = 'point',fill = 'cont', colour = 'black', shape = 21)|>
-  gordi_colour(fill = T, scale = 'continuous', family = 'viridis')|>
-  gordi_sites(fill = 'elevation', shape = 21)|>
-  gordi_colour(fill = T, scale = 'continuous', family = 'brewer', palette_name = 'Set1')|>
-  gordi_label(what = 'sites', label = 'elevation', label_colour = 'elevation', repel_label = T)|>
-  gordi_colour(scale = 'continuous', family = 'brewer', palette_name = 'Set1')|>
-  gordi_label(label = 'species', label_colour = 'cont')|>
-  gordi_colour(scale = 'continuous', family = 'brewer', palette_name = 'Set1')
-  

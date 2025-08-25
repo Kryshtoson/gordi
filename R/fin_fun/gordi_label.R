@@ -228,22 +228,3 @@ gordi_label <- function(pass,
   return(pass)
 }
 
-gordi_read(m, env, traits)|>
-  gordi_species(label = F, symbol = 'point', colour = 'cont')|>
-  gordi_colour(fill = F, scale = 'continuous', family = 'viridis')|>
-  gordi_predict()|>
-  gordi_label(label_colour = 'blue', repel_label = T, nudge_y = -0.1)|>
-  gordi_label(what = 'species', repel_label = T)
-  # gordi_sites(fill = 'elevation', shape = 21)|>
-  # gordi_colour(fill = T, scale = 'continuous', family = 'brewer', palette_name = 'Set1')|>
-  gordi_label(what = 'species', label_colour = 'cont', size = 5, repel_label = T)|>
-  gordi_predict()
-
-gordi_read(m, env, traits)->o
-bind_cols(o$species_name, o$species_scores)|>
-  ggplot(aes(CAP1, MDS1))+
-  geom_text(aes(label = species_names), size = 5)
-
-names(bind_cols(o$predictor_scores, o$predictor_names))[2]
-
-names(bind_cols(o$predictor_names, o$predictor_scores))[1]
