@@ -38,14 +38,17 @@
 #'     \item{predictor_names}{predictor names, or NA for DCA/NMDS}
 #'   }
 #' 
+#' @seealso [gordi_sites()], [gordi_read()], [gordi_predict()]
+#' 
+#' @export
+#' 
 #' @examples
 #' library(vegan)
 #' library(tidyverse)
 #' data(dune)
-#' data(dune.env)
-#' mod <- rda(dune ~ ., data = dune.env)
-#' res <- gordi_read(mod, env = dune.env)
-#' str(res)
+#' m <- capscale(dune ~ 1)
+#' o <- gordi_read(m)
+#' o
 
 
 gordi_read <- function(m,

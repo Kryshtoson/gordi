@@ -1,4 +1,81 @@
-# gordi_species()
+#' Extracts species scores and relevant stuff and creates plot
+#' 
+#' @description
+#' [gordi_species()] takes the result of [gordi_read()] and creates plot with
+#' species scores. PCA, RDA, PCoA, and db-RDA use arrows by default, and CA, CCA,
+#' DCA and NMDS use points. This can be changed manually. You can also set a wide
+#' range of graphing parameters, such as colour, fill, size, shape, alpha, stroke,
+#' and more traditional ggplot arguments, which can read both, static and dynamic
+#' variable (e.g., 'red' or 'elevation').
+#' 
+#' In the process it renames ordination
+#' axes to Axis_spe1 and Axis_spe2, and the original vegan names passes
+#' to "actual_labs" which are used just for plotting.
+#' 
+#' @param pass Object from [gordi_read()] function.
+#' @param label Logical; default = T, whether to display label by each point/arrow 
+#'   or not. In [gordi_species()], label can be only `species_names`, which are 
+#'   displayed as a full name. If you want to customize the labels, you can it
+#'   with [gordi_label()] function, which overrides this setting.
+#' @param symbol `c('default', 'point', 'arrow')`; How should species scores be 
+#'   displayed. 
+#' @param colour Colour can be defined statically as word from the [colours()]
+#'   list (e.g. 'red'), HEX code (e.g. #5d782e), or number from [palette()] (e.g. 3).
+#'   It can also defined dynamically (according to some variable, e.g. elevation
+#'   or vegetation type). This variable has to be present in the `env` table and its
+#'   name has to be written in "quotation marks". Default colour of arrows is 4.
+#' @param size Changes size of points. Can be defined as a number (statically) or 
+#'   by a variable (dynamically) - the name of the variable has to be in "quotation
+#'   marks". Default size is 3.
+#' @param shape Defines shape of points. Can be statical (numeric value from 0 to 25)
+#'   or dynamical (by categorical variable written in "quotation marks"). Default
+#'   shape is 16. Symbols 0-20 have only colour, symbols 21-25 have both, colour 
+#'   and fill, which can be defined separately. 
+#' @param fill Fill can be defined statically as word from the [colours()]
+#'   list (e.g. 'red'), HEX code (e.g. #5d782e), or number from [palette()] (e.g. 3).
+#'   It can also defined dynamically (according to some variable, e.g. elevation
+#'   or vegetation type). This variable has to be present in the `env` table and
+#'   its name has to be written in "quotation marks". Default fill "white".
+#' @param alpha Transparency of symbols. Numeric value. Default is 0.6. Can be set
+#'   statically or dynamically (use "").
+#' @param stroke Shape or arrow outline width. Numeric value. Can be set statically
+#'   or dynamically (use "").
+#' @param linetype Changes type of line used in arrows. Can be specified with either
+#'   an integer (0-6), a name (0 = blank, 1 = solid, 2 = dashed, 3 = dotted,
+#'   4 = dotdash, 5 = longdash, 6 = twodash). See [aes_linetype_size_shape()] for 
+#'   more details.
+#' @param linewidth Self-explanatory. Can be numerical value. See
+#'   [aes_linetype_size_shape()] for more details.
+#' @param arrow_size Changes the size of arrow. Numeric value. Default is 0.3 cm.
+#'   Can't be set dynamically. Just can't. Why would you do that.
+#' @param repel_label Logical; repels labels of species for better readability.
+#'   Default is F. If you want to customize the labels, you can it with
+#'   [gordi_label()] function, which overrides this setting.
+#' 
+#' 
+#' @return The input `pass` object with an updated element:
+#'   \describe{
+#'     \item{plot}{A `ggplot` object containing the ordination plot with
+#'     species scores added.}
+#'   }
+#'
+#' @seealso [gordi_sites()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()], 
+#'   [gordi_read()], [gordi_predict()] 
+#' 
+#' @export
+#' 
+#' @example 
+#' library(vegan)
+#' library(tidyverse)
+#' library(ggrepel)
+#' 
+#' data(dune)
+#' m <- capscale(dune ~ 1)
+#' o <- gordi_read(m) |> 
+#'  gordi_species()
+#' o
+#' 
+
 library(vegan)
 library(tidyverse)
 library(ggrepel)
@@ -131,7 +208,7 @@ gordi_species <- function(pass,
   )
   
   if(map_colour) aes_args_segment$colour <- sym(colour)
-  if(map_size) aes_args_segment$linewidth <- sym(linewidth)
+  if(map_linewidth) aes_args_segment$linewidth <- sym(linewidth)
   if(map_linetype) aes_args_segment$linetype <- sym(linetype)
   if(map_alpha) aes_args_segment$alpha <- sym(alpha)
   
@@ -186,8 +263,6 @@ gordi_species <- function(pass,
   
   
   # More scales possibility (e.g. one colour in sites and other in species)
-  # p <- p + ggnewscale::new_scale_colour()
-  #p <- p + ggnewscale::new_scale_fill()
   p <- p + ggnewscale::new_scale('size')
   p <- p + ggnewscale::new_scale('shape')
   p <- p + ggnewscale::new_scale('alpha')
