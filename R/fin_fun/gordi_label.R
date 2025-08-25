@@ -9,6 +9,7 @@ gordi_label <- function(pass,
                         scaling_coefficient = 0.9,
                         nudge_x = 0,
                         nudge_y = 0,
+                        max.overlaps = 10,
                         repel_label = FALSE){ #if TRUE -> geom_text_repel
   
   
@@ -140,7 +141,7 @@ gordi_label <- function(pass,
       p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col), colour = !!sym(col_var))
       
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } #constant colour scale
     else {
@@ -148,7 +149,7 @@ gordi_label <- function(pass,
       else if (const_shortcut_colour) shortcut_colour
       else 'black'
       mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col))
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
       
     }
@@ -177,12 +178,12 @@ gordi_label <- function(pass,
       p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
       if (isTRUE(repel_label)) 
-        p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black' #if not specified label_colour it will be black
       mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol))
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     }
   }
@@ -213,13 +214,13 @@ gordi_label <- function(pass,
       p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
       if(isTRUE(repel_label))
-        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black'
       mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol))
       if (isTRUE(repel_label))
-        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     }
   }
