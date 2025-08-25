@@ -121,7 +121,6 @@ gordi_label <- function(pass,
         warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
       }
       
-      
       #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
       spe_df <- spe_df|>
         mutate(short_name = ifelse(has_sub, short_sub, short_non))
