@@ -3,7 +3,7 @@ gordi_colour <- function(pass,
                          family = c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default'),
                          fill = FALSE,
                          breaks = waiver(), name = waiver(), labels = waiver(), #original scale_ arguments
-                         limits = NULL, na.value = NA, guide = waiver(), trans = 'identity', 
+                         limits = NULL, na.value = 'grey50', guide = waiver(), trans = 'identity', 
                          values = NULL, #used by manual (discrete) and continuous (gradientn, stepsn)
                          option = NULL, direction = 1, begin = 0, end = 1, alpha = 1, #viridis
                          low = NULL, mid = NULL, high = NULL, midpoint = NULL, #gradient, gradient2, steps, steps2
