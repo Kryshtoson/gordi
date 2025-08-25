@@ -129,15 +129,15 @@ gordi_label <- function(pass,
     #whether colour is mapped by a column or is a constant (both labels and shortcuts)
     
     map_shortcut_colour <- !identical(shortcut_colour, '') && has_name(spe_df, shortcut_colour)
-    const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())
+    const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())|| (is.character(shortcut_colour) && shortcut_colour %in% palette()) || (is.numeric(shortcut_colour) && shortcut_colour %in% seq_along(palette()))
     
     map_label_colour <- !identical(label_colour, '') && has_name(spe_df, label_colour)
-    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", label_colour) || label_colour %in% grDevices::colours())
+    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
     
     if (map_shortcut_colour || map_label_colour){
       #if shortcut-colour or label_colour start a new colour scale
       col_var <- if (map_shortcut_colour) shortcut_colour else label_colour #col_var is shortcut_colour when map_shortcut_colour is true else its label_colour
-      p <- p + new_scale_colour()
+      p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col), colour = !!sym(col_var))
       
       if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
@@ -170,11 +170,11 @@ gordi_label <- function(pass,
     
     #mapped and constant site label colour
     map_label_colour <- !identical(label_colour, '') && has_name(site_df, label_colour)
-    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())
+    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
     
     if (map_label_colour){
       #new colour scale
-      p <- p + new_scale_colour()
+      p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
       if (isTRUE(repel_label)) 
         p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
@@ -208,7 +208,7 @@ gordi_label <- function(pass,
     coef <- (max(abs(plot_range)) / max(abs(predictor_range))) * scaling_coefficient
     
     map_label_colour <- !identical(label_colour, '') && has_name(pred_df, label_colour)
-    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())
+    const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
     if (map_label_colour){
       p <- p + ggnewscale::new_scale_colour()
       mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
