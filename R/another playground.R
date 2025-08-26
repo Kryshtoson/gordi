@@ -64,3 +64,9 @@ mod <- capscale(dune ~ 1)
 res <- gordi_read(mod) |> 
   gordi_species()
 res
+
+
+m <- capscale(dune ~ A1, data = dune.env)
+gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
+  gordi_species(label = F) |> 
+  gordi_predict(scaling_coefficient = 1)

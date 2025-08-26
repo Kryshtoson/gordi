@@ -1,9 +1,63 @@
-# gordi_predict()
-library(vegan)
-library(tidyverse)
-library(ggrepel)
-
-
+#' Extracts predictor scores and relevant stuff and creates plot
+#' 
+#' @description
+#' [gordi_predict()] takes the result of [gordi_read()] and creates plot with
+#' predictor arrows. So far, it can work with continuous explanatory variables,
+#' as for categorical we need to come up with a way how to calculate scores
+#' for the last category. It also can't shdisplay explanatory variables passively.
+#' There will be a special function for this, maybe something as
+#' `gordi_passive_agressive()`. Similarly to [gordi_species()] and [gordi_sites()],
+#' you can also set a wide range of graphing parameters, such as colour, fill, size,
+#' shape, alpha, stroke, and more traditional ggplot arguments, which can read
+#' both, static and dynamic variable (e.g., 'red' or 'elevation').
+#' 
+#' @param pass Object from [gordi_read()] function.
+#' @param label Logical; default = T, whether to display label by each point/arrow 
+#'   or not. In [gordi_species()], label can be only `species_names`, which are 
+#'   displayed as a full name. If you want to customize the labels, you can it
+#'   with [gordi_label()] function, which overrides this setting.
+#' @param colour Colour can be defined statically as word from the [colours()]
+#'   list (e.g. 'red'), HEX code (e.g. #5d782e), or number from [palette()] (e.g. 3).
+#'   It can also defined dynamically (according to some variable, e.g. elevation
+#'   or vegetation type). This variable has to be present in the `env` table and its
+#'   name has to be written in "quotation marks". Default colour of arrows is 4.
+#' @param alpha Transparency of symbols. Numeric value. Default is 0.6. Can be set
+#'   statically or dynamically (use "").      
+#' @param arrow_size Changes the size of arrow. Numeric value. Default is 0.3 cm.
+#'   Can't be set dynamically. Just can't. Why would you do that. 
+#' @param linewidth Self-explanatory. Can be numerical value. See
+#'   [aes_linetype_size_shape()] for more details.
+#' @param linetype Changes type of line used in arrows. Can be specified with either
+#'   an integer (0-6), a name (0 = blank, 1 = solid, 2 = dashed, 3 = dotted,
+#'   4 = dotdash, 5 = longdash, 6 = twodash). See [aes_linetype_size_shape()] for 
+#'   more details.
+#' @param scaling_coefficient Numeric; edits the lengts of predictor arrow. Default value
+#'   is `0.9` which means that the predictor arrow will be as long as 0.9 of
+#'   the longest axis displayed in the plotframe.
+#' @param repel_label Logical; repels labels of species for better readability.
+#'   Default is F. If you want to customize the labels, you can it with
+#'   [gordi_label()] function, which overrides this setting.   
+#' 
+#' 
+#' 
+#' @return The input object `pass` with an updated `plot` element that includes
+#'   predictor arrows and labels.
+#' 
+#' @example 
+#' library(vegan)
+#' library(tidyverse)
+#' library(ggrepel)
+#' 
+#' data(dune)
+#' data(dune.env)
+#' 
+#' m <- capscale(dune ~ A1, data = dune.env)
+#' gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
+#'   gordi_species(label = F) |> 
+#'   gordi_predict(scaling_coefficient = 1)   
+#' 
+#' 
+#' 
 gordi_predict <- function(
     pass,
     label = '',
