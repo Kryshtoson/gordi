@@ -23,11 +23,11 @@
 #' If no layer uses colour/fill aesthetic, this function has no effect.
 #' 
 #' @param pass A list object produced by [gordi_read()] 
-#' @param scale One of the `c('continuous', 'discrete','auto', 'binned')`.
+#' @param scale Character; One of the `c('continuous', 'discrete','auto', 'binned')`.
 #' Character.
-#' @param family One of the palette families `c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')`.
+#' @param family Character; One of the palette families `c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')`.
 #' Character.
-#' @param fill Logical. If fill = FALSE operates on colour scale, if fill = TRUE operates on fill scale.
+#' @param fill Logical; If fill = FALSE operates on colour scale, if fill = TRUE operates on fill scale.
 #' Default is FALSE.
 #' @param breaks, name, labels, limits, guide, trans standard arguments, see `scale_colour_...` or `scale_fill_...`.
 #' @param na.value Colour used for NA values.

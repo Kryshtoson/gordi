@@ -28,14 +28,14 @@
 #' If label_colour or shortcut_colour is a constant (hex or colour name), this constant is directly used and no new colour scale is created.
 #' 
 #' @param pass A list object produced by [gordi_read()]
-#' @param what Choose what labels to draw/edit: one of `c('species', 'sites', 'predictor')`.
-#' @param label Specify column in a dataframe used for labels. Character.
+#' @param what Character; Choose what labels to draw/edit: one of `c('species', 'sites', 'predictor')`.
+#' @param label Character; Specify column in a dataframe used for labels. Character.
 #' For what = 'species' the default is the first column in spe_df (species_names)
 #' For what = 'sites' the default is the first column in site_df
 #' For what = 'predictor' the default is the third column in pred_df (predictor_names)
 #' @param label_colour Change colour for non shortcut labels. 
 #' Either a constant colour (hex or colour name) or a column name to map label colour. If mapped, a new scale colour is used.
-#' @param shortcut Creates shortcuts of species names (no need to define column used for labels, the function takes the first column of spe_df). 
+#' @param shortcut Character; Creates shortcuts of species names (no need to define column used for labels, the function takes the first column of spe_df). 
 #' Default is three letter shortcut (e.g. Sti.eri)
 #' Defining shortcut argument:
 #' - shortcut = `'upper.lower'` -> draws e.g. Sti.eri 
@@ -53,20 +53,20 @@
 #' - shortcut = `'upper*upper'` -> draws e.g. Sti*Eri 
 #' @param shortcut_colour Change colour for shortcut labels.
 #' #' Either a constant colour (hex or colour name) or a column name to map label colour. If mapped, a new scale colour is used.
-#' @param shortcut_length Change the length of shortcuts. Number of letters to take from genus/species. 
-#' Integer; default is shortcut_length = 3 (e.g. Sti.eri).
-#' @param size Change size of labels. Numeric text size in mm (as in [ggplot::geom_text()]). 
+#' @param shortcut_length Integer; Change the length of shortcuts. Number of letters to take from genus/species. 
+#' Default is shortcut_length = 3 (e.g. Sti.eri).
+#' @param size Integer; Change size of labels. Numeric text size in mm (as in [ggplot::geom_text()]). 
 #' Default size = 3.9.
 #' @param scaling_coefficient Coefficient used for adjusting the position of predictor label. 
 #' Numeric (0:1).
 #' For more information see also [gordi_predict()].
-#' @param nudge_x Numeric offset on x axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
-#' @param nudge_y Numeric offset on y axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
-#' @param max.overlaps Excludes label when they overlap too many things. Used only when `repel_label = TRUE`.
+#' @param nudge_x Integer; Numeric offset on x axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
+#' @param nudge_y Integer; Numeric offset on y axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
+#' @param max.overlaps Integer; Excludes label when they overlap too many things. Used only when `repel_label = TRUE`.
 #' Details in [geom_text_repel()]
 #' Default `max.overlaps = 10`
-#' @param repel_label Define whether to use geom_text or geom_text_repel.
-#' Logical; default `repel_label = FALSE` uses [geom_text()]
+#' @param repel_label Logical; Define whether to use geom_text or geom_text_repel.
+#' Default `repel_label = FALSE` uses [geom_text()]
 #' `repel_label = TRUE` uses [geom_text_repel()]
 #' @return The updated `pass` object with label layers added to `pass$plot`.
 #' @examples

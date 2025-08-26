@@ -18,7 +18,7 @@
 #' 
 #' @param pass A list object produced by [gordi_read()]
 #' The function updates and returns this object.
-#' @param label Logical, default is `TRUE`. Draws site labels (`TRUE`) or not (`FALSE`).
+#' @param label Logical; Default is `TRUE`. Draws site labels (`TRUE`) or not (`FALSE`).
 #' Site labels can use only the first column of 'site_df', if you want custom labels, 
 #' please use function [gordi_label()], which overrides label layer settings. 
 #' @param fill Changes site fill colour. Can be either:
@@ -29,17 +29,16 @@
 #' - avariable = a specific column name of 'site_df'
 #' - a constant value: R colour name, numeric value or hex (e.g. `'green'`, `1`, `'#6aa84f'`)
 #' When left as `''`, the internal default colours are used.
-#' @param alpha Changes transparency of points.
-#' Defined as numeric values. 
+#' @param alpha Integer; Changes transparency of points.
 #' When left as `''`, the internal default values are used (alpha = 1).
-#' @param stroke Change shape or arrow width.
+#' @param stroke Integer; Change shape or arrow width.
 #' Defined as numeric values.
 #' When left as `''`, the internal default values are used (stroke = 0.5).
-#' @param shape Change the shape of points. Either by a specific mapping column from site_df or by a constant (numeric value).
+#' @param shape Integer; Change the shape of points. Either by a specific mapping column from site_df or by a constant (numeric value).
 #' When left as `''`, the internal default values are used (shape = 16).
-#' @param size Change the size of points. Either by a specific mapping column from site_df or by a constant (numeric value).
+#' @param size Integer; Change the size of points. Either by a specific mapping column from site_df or by a constant (numeric value).
 #' When left as `''`, the internal default values are used (size = 3).
-#' @param repel_label The labels are drawn by [geom_text_repel()].
+#' @param repel_label Logical; The labels are drawn by [geom_text_repel()].
 #' The default is set to repel_label = TRUE.
 #' 
 #' @return The updated 'pass' object with site layers appended to `pass$plot`.
