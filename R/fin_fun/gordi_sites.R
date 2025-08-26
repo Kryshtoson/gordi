@@ -1,3 +1,70 @@
+#' Draw ordination sites. 
+#' 
+#' @description
+#' The function [gordi_sites()] takes the result of [gordi_read()] and adds sites (as points) 
+#' and labels (optional) to a ggplot object created by the function itself. 
+#' In addition to drawing sites you can change a wide range of parameters.
+#' In the process it renames ordination axes to Axis_site1 and Axis_site2, while the original vegan names 
+#' are passed to 'actual_labs' used for plotting.
+#' 
+#' @details
+#' The function builds a dataframe 'site_df' by binding 'pass&env' and 'pass$site_scores'.
+#' Aesthetics can be mapped by passing a column name present in the site_df dataframe or by using literal values (e.g. hex colour, numeric size).
+#' Fresh colour/fill scales are started for the site layer by ggnewscale::new_scale_colour() and/or ggnewscale::new_scale_fill(), so that later calls (e.g. gordi_colour, layers addded after sites) can define their own independent colour/fill scales.
+#' Additional fresh scales (for size, alpha, stroke, shape) are created at the end of the function, so subsequent layers do not inherit site mappings.
+#' If label = TRUE, site labels are drawn using the first column in site_df dataframe.
+#' The default setting for repel_label is TRUE, so the labels are drawn using `geom_text_repel()`. 
+#' For changing colour and label aesthetics please refer to [gordi_colour()] and [gordi_label()].
+#' 
+#' @param pass A list object produced by [gordi_read()]
+#' The function updates and returns this object.
+#' @param label Logical, default is `TRUE`. Draws site labels (`TRUE`) or not (`FALSE`).
+#' Site labels can use only the first column of 'site_df', if you want custom labels, 
+#' please use function [gordi_label()], which overrides label layer settings. 
+#' @param fill Changes site fill colour. Can be either:
+#' - a variable = a specific column name of 'site_df'
+#' - a constant value: R colour name, numeric value or hex (e.g. `'green'`, `1`, `'#6aa84f'`)
+#' When left as `''`, the internal default colours are used.
+#' @param colour Changes site colours. Can be either:
+#' - avariable = a specific column name of 'site_df'
+#' - a constant value: R colour name, numeric value or hex (e.g. `'green'`, `1`, `'#6aa84f'`)
+#' When left as `''`, the internal default colours are used.
+#' @param alpha Changes transparency of points.
+#' Defined as numeric values. 
+#' When left as `''`, the internal default values are used (alpha = 1).
+#' @param stroke Change shape or arrow width.
+#' Defined as numeric values.
+#' When left as `''`, the internal default values are used (stroke = 0.5).
+#' @param shape Change the shape of points. Either by a specific mapping column from site_df or by a constant (numeric value).
+#' When left as `''`, the internal default values are used (shape = 16).
+#' @param size Change the size of points. Either by a specific mapping column from site_df or by a constant (numeric value).
+#' When left as `''`, the internal default values are used (size = 3).
+#' @param repel_label The labels are drawn by [geom_text_repel()].
+#' The default is set to repel_label = TRUE.
+#' 
+#' @return The updated 'pass' object with site layers appended to `pass$plot`.
+#' 
+#' @examples
+#' o <- gordi_read(m, dune.env)
+#' 
+#' basic sites plot with default styling and labels
+#' o|>
+#' gordi_sites()
+#' 
+#' mapped colour and size from env dataset, constant alpha, shape, fill
+#' o|>
+#' gordi_sites(colour = 'elevation', size = 'elevation', alpha = 0.7, shape = 21, fill = 'white')
+#' 
+#' no labels, constant green coloured points
+#' o|>
+#' gordi_sites(label = FALSE, colour = 'green')
+#' 
+#' @seealso [gordi_read()], [gordi_species()], [gordi_label()], [gordi_colour()],[gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()]
+#' @export
+
+
+
+
 # gordi_sites()
 library(vegan)
 library(tidyverse)
@@ -5,7 +72,7 @@ library(ggrepel)
 
 
 gordi_sites <- function(pass,
-                        label = '',
+                        label = TRUE,
                         fill = '',
                         alpha = '',
                         stroke = '',
@@ -40,15 +107,15 @@ gordi_sites <- function(pass,
   
   site_df <- bind_cols(pass$env, pass$site_scores)
   
-  #' accounting for labeling
-  if (label != '') {
-    if (repel_label) {
-      p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
-    } else {
-      p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
-    }
-  }
-  
+  #' #' accounting for labeling
+  #' if (label != '') {
+  #'   if (repel_label) {
+  #'     p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
+  #'   } else {
+  #'     p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(label)))
+  #'   }
+  #' }
+  #' 
   
   # Detect mapped vs constant aesthetics
   map_colour <- !identical(colour, '') && has_name(site_df, colour)
@@ -106,12 +173,21 @@ gordi_sites <- function(pass,
   
   #' plot  
   p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
-  
+ 
+  if (isTRUE(label)){
+    labcol <- names(site_df)[1]
+    if (isTRUE(repel_label)){
+      p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black') 
+    } else {
+      p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black')
+    }
+    }
+   
   #' accounting for indiviidual geom scales 
   #' p <- p + ggnewscale::new_scale("fill") 
   #' p <- p + ggnewscale::new_scale_colour()
   p <- p + ggnewscale::new_scale("size") 
-  p <- p + ggnewscale::new_scale("shape") 
+  p <- p + ggnewscale::new_scale("shape")  
   p <- p + ggnewscale::new_scale("alpha")
   p <- p + ggnewscale::new_scale("stroke") 
   
