@@ -1,3 +1,59 @@
+#'Set colour/fill scales for gordi plots
+#'
+#'@description
+#'Adds a colour or fill scale to the current ggplot plot stored in `pass$plot` (created by gordi_*() functions). 
+#'After applying the colour scale, it starts a new independent scale using `ggnewscale`, 
+#'so later layers can have their own scale without any interference.
+#'
+#'@details
+#' use fill = FALSE to modify colour scales (default) and fill = TRUE to modify the fill scales
+#' Compulsory arguments:
+#' - `scale` selects the scale type: `continuous`, `discrete`, `binned` or `auto`. 
+#' With `scale = 'auto'`, the function chooses scale `discrete` when `values` are specified (e.g. manual palette), 
+#' otherwise `continuous`.
+#' - `family` selects the scale family within the scale type:
+#' for scale `discrete` -> `'manual'`, `'viridis'`, `'brewer'`, `'default'`
+#' for scale `continuous` ->  `'viridis'`, `'gradient'`, `'steps'`, `'brewer'`, `'default'`
+#' for scale `binned` -> `'viridis'`, `'brewer'`, `'steps'`, `'default'`
+#' For `scale = 'discrete'`, `family = 'manual'` you must provide `values` (vector of colours)
+#' Argument `na.values` sets colours for NA values in the dataset.
+#' After adding a certain scale, the function set a new colour/fill scale with `ggnewscale`, so subsequent layers can use a fresh scale.
+#' 
+#' Call [gordi_colour()] right after you have added a layer that maps colour/fill (e.g. `gordi_species(colour = ...)`, `gordi_sites(fill = ...)`).
+#' If no layer uses colour/fill aesthetic, this function has no effect.
+#' 
+#' @param pass A list object produced by [gordi_read()] 
+#' @param scale One of the `c('continuous', 'discrete','auto', 'binned')`.
+#' Character.
+#' @param family One of the palette families `c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')`.
+#' Character.
+#' @param fill Logical. If fill = FALSE operates on colour scale, if fill = TRUE operates on fill scale.
+#' Default is FALSE.
+#' @param breaks, name, labels, limits, guide, trans standard arguments, see `scale_colour_...` or `scale_fill_...`.
+#' @param na.value Colour used for NA values.
+#' @param values Vector of colours for `manual` discrete scale, and for continuous gradientn and stepsn variants.
+#' @param option, direction, begin, end, alpha  Options for `viridis` scales.
+#' @param low, mid, midpoint, high Colours for `gradient`/`gradient2` or `steps`/`steps2` scales.
+#' @param palette_name Arguments for `brewer` scales.
+#' @param bins, n.breaks Arguments for `binned`/`steps` scales.
+#' 
+#' @return The updated `pass` object with label layers added to `pass$plot`. 
+#' Followed by a fresh `ggnewscale` for the same aesthetic (colour or fill).
+#' 
+#' @examples
+#' # discrete species colours with a brewer palette
+#' gordi_read(m, env, traits)|>
+#' gordi_species(colour = 'form')|>
+#' gordi_colour(scale = 'discrete', family = 'brewer', palette_name = 'Set2')
+#' 
+#' #continuous viridis fill for sites
+#' gordi_read(m, env)|>
+#' gordi_sites(fill = 'elevation')|>
+#' gordi_colour(fill = TRUE, scale = 'continuous', family = 'viridis')
+
+
+
+
 gordi_colour <- function(pass,
                          scale = c('continuous', 'discrete','auto', 'binned'), #what colour scale to use
                          family = c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default'),
