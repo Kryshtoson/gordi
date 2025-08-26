@@ -13,7 +13,7 @@
 #' 
 #' @param pass Object from [gordi_read()] function.
 #' @param label Logical; default = T, whether to display label by each point/arrow 
-#'   or not. In [gordi_species()], label can be only `species_names`, which are 
+#'   or not. In [gordi_predict()], label can be only `predictor_names`, which are 
 #'   displayed as a full name. If you want to customize the labels, you can it
 #'   with [gordi_label()] function, which overrides this setting.
 #' @param colour Colour can be defined statically as word from the [colours()]
@@ -60,7 +60,7 @@
 #' 
 gordi_predict <- function(
     pass,
-    label = '',
+    label = T,
     colour = '',
     alpha = '',
     arrow_size = '',
@@ -177,11 +177,16 @@ gordi_predict <- function(
   p <- p + do.call(geom_segment,
                    c(list(data = pred_df,
                           mapping = do.call(aes, aes_args_segment)),
-                     const_args_segment)) +
-    geom_text_repel(data = pred_df,
-                    aes(x = Axis_pred1 * coef,
-                        y = Axis_pred2 * coef,
-                        label = predictor_names), colour = 2)
+                     const_args_segment)) 
+  
+  if (isTRUE(label)){
+    labcol <- names(pred_df)[3]
+    if (isTRUE(repel_label)){
+      p <- p + geom_text_repel(data = pred_df, aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol)), colour = 'black') 
+    } else {
+      p <- p + geom_text(data = pred_df, aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol)), colour = 'black')
+    }
+  }
   
   ### save plot
   pass$plot <- p
@@ -189,3 +194,4 @@ gordi_predict <- function(
   
   return(pass)
 }
+
