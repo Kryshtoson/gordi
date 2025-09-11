@@ -72,7 +72,7 @@ m <- decorana(spe_upt)
 plot(m)
 
 # NMDS
-m <- metaMDS(spe, k = 3)
+#m <- metaMDS(spe, k = 3)
 
 as_tibble(as.data.frame(scores(m, scaling = 'symm', display = 'sites', choices = 1:2, correlation = F, hill = T)))
 as_tibble(as.data.frame(scores(m, scaling = 'symm', display = 'species', choices = 1:2, correlation = F, hill = T)))
@@ -96,7 +96,7 @@ as_tibble(as.data.frame(scores(m, scaling = 'symm', display = 'species', choices
 #' ...
 #' decorana
 
-
+browseVignettes()
 #' =====================================================================
 #' arguments: 
 #' -> model

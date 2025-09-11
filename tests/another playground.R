@@ -70,3 +70,14 @@ m <- capscale(dune ~ A1, data = dune.env)
 gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
   gordi_species(label = F) |> 
   gordi_predict(scaling_coefficient = 0.1, label = F)
+
+
+
+# partial db-RDA
+m <- capscale(spe ~ elevation + Condition(slope), data = env)
+m
+
+gordi_read(m, scaling = 'symm') |> 
+  gordi_sites(label = F) |> 
+  gordi_species(label = F) |> 
+  gordi_predict()
