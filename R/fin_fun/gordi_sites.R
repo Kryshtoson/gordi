@@ -103,6 +103,7 @@ gordi_sites <- function(pass,
   
   p <- p + ggnewscale::new_scale_colour()
   p <- p + ggnewscale::new_scale_fill()
+  p <- p + ggnewscale::new_scale("shape") 
   
   site_df <- bind_cols(pass$env, pass$site_scores)
   
@@ -186,7 +187,7 @@ gordi_sites <- function(pass,
   #' p <- p + ggnewscale::new_scale("fill") 
   #' p <- p + ggnewscale::new_scale_colour()
   p <- p + ggnewscale::new_scale("size") 
-  p <- p + ggnewscale::new_scale("shape")  
+  # p <- p + ggnewscale::new_scale("shape")  
   p <- p + ggnewscale::new_scale("alpha")
   p <- p + ggnewscale::new_scale("stroke") 
   

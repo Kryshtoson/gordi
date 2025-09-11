@@ -129,6 +129,7 @@ gordi_species <- function(pass,
   
   p <- p + ggnewscale::new_scale_colour() 
   p <- p + ggnewscale::new_scale_fill()
+  p <- p + ggnewscale::new_scale('shape')
   
   ### Detect mapped vs constant aesthetics
   
@@ -264,7 +265,7 @@ gordi_species <- function(pass,
   
   # More scales possibility (e.g. one colour in sites and other in species)
   p <- p + ggnewscale::new_scale('size')
-  p <- p + ggnewscale::new_scale('shape')
+  # p <- p + ggnewscale::new_scale('shape')
   p <- p + ggnewscale::new_scale('alpha')
   p <- p + ggnewscale::new_scale('stroke')
   
