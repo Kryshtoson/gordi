@@ -24,12 +24,17 @@
 #' 
 #' @param pass A list object produced by [gordi_read()] 
 #' @param scale Character; One of the `c('continuous', 'discrete','auto', 'binned')`.
-#' Character.
+#'    Character.
 #' @param family Character; One of the palette families `c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')`.
-#' Character.
+#'    Character.
 #' @param fill Logical; If fill = FALSE operates on colour scale, if fill = TRUE operates on fill scale.
-#' Default is FALSE.
-#' @param breaks, name, labels, limits, guide, trans standard arguments, see `scale_colour_...` or `scale_fill_...`.
+#'    Default is FALSE.
+#' @param breaks Scale breaks. See `scale_colour_...` or `scale_fill_...`.
+#' @param name Scale name. See `scale_colour_...` or `scale_fill_...`.
+#' @param labels Labels for scale. See `scale_colour_...` or `scale_fill_...`.
+#' @param limits Scale limits. See `scale_colour_...` or `scale_fill_...`.
+#' @param guide Guide for the scale. See `scale_colour_...` or `scale_fill_...`.
+#' @param trans Transformation for the scale. See `scale_colour_...` or `scale_fill_...`.
 #' @param na.value Colour used for NA values.
 #' @param values Vector of colours for `manual` discrete scale, and for continuous gradientn and stepsn variants.
 #' @param option, direction, begin, end, alpha  Options for `viridis` scales.
@@ -37,23 +42,19 @@
 #' @param palette_name Arguments for `brewer` scales.
 #' @param bins, n.breaks Arguments for `binned`/`steps` scales.
 #' 
-#' @return The updated `pass` object with label layers added to `pass$plot`. 
-#' Followed by a fresh `ggnewscale` for the same aesthetic (colour or fill).
+#' @return The updated `pass` object with label layers added to `pass$plot`. Followed by a fresh `ggnewscale` for the same aesthetic (colour or fill).
 #' 
 #' @examples
 #' # discrete species colours with a brewer palette
-#' gordi_read(m, env, traits)|>
-#' gordi_species(colour = 'form')|>
-#' gordi_colour(scale = 'discrete', family = 'brewer', palette_name = 'Set2')
+#' gordi_read(m, env, traits) |>
+#'   gordi_species(colour = 'form') |>
+#'   gordi_colour(scale = 'discrete', family = 'brewer', palette_name = 'Set2')
 #' 
-#' #continuous viridis fill for sites
-#' gordi_read(m, env)|>
-#' gordi_sites(fill = 'elevation')|>
-#' gordi_colour(fill = TRUE, scale = 'continuous', family = 'viridis')
-
-
-
-
+#' # continuous viridis fill for sites
+#' gordi_read(m, env) |>
+#'   gordi_sites(fill = 'elevation') |>
+#'   gordi_colour(fill = TRUE, scale = 'continuous', family = 'viridis')
+#' @export
 gordi_colour <- function(pass,
                          scale = c('continuous', 'discrete','auto', 'binned'), #what colour scale to use
                          family = c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default'),

@@ -4,8 +4,9 @@
 #' [gordi_predict()] takes the result of [gordi_read()] and creates plot with
 #' predictor arrows. So far, it can work with continuous explanatory variables,
 #' as for categorical we need to come up with a way how to calculate scores
-#' for the last category. It also can't shdisplay explanatory variables passively.
-#' There will be a special function for this, maybe something as
+#' for the last category. It also can't display explanatory variables passively.
+#' 
+#' There will be a special function for this once, maybe something as
 #' `gordi_passive_agressive()`. Similarly to [gordi_species()] and [gordi_sites()],
 #' you can also set a wide range of graphing parameters, such as colour, fill, size,
 #' shape, alpha, stroke, and more traditional ggplot arguments, which can read
@@ -23,8 +24,7 @@
 #'   name has to be written in "quotation marks". Default colour of arrows is 4.
 #' @param alpha Transparency of symbols. Numeric value. Default is 0.6. Can be set
 #'   statically or dynamically (use "").      
-#' @param arrow_size Changes the size of arrow. Numeric value. Default is 0.3 cm.
-#'   Can't be set dynamically. Just can't. Why would you do that. 
+#' @param arrow_size Numeric; length of arrow in cm. Default is 0.3 cm. 
 #' @param linewidth Self-explanatory. Can be numerical value. See
 #'   [aes_linetype_size_shape()] for more details.
 #' @param linetype Changes type of line used in arrows. Can be specified with either
@@ -35,7 +35,7 @@
 #'   is `0.9` which means that the predictor arrow will be as long as 0.9 of
 #'   the longest axis displayed in the plotframe.
 #' @param repel_label Logical; repels labels of species for better readability.
-#'   Default is F. If you want to customize the labels, you can it with
+#'   Default is F. If you want to customize the labels, you can do it with
 #'   [gordi_label()] function, which overrides this setting.   
 #' 
 #' 
@@ -43,7 +43,7 @@
 #' @return The input object `pass` with an updated `plot` element that includes
 #'   predictor arrows and labels.
 #' 
-#' @example 
+#' @examples 
 #' library(vegan)
 #' library(tidyverse)
 #' library(ggrepel)
@@ -52,12 +52,10 @@
 #' data(dune.env)
 #' 
 #' m <- capscale(dune ~ A1, data = dune.env)
-#' gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
-#'   gordi_species(label = F) |> 
+#' gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |>
+#'   gordi_species(label = F) |>
 #'   gordi_predict(scaling_coefficient = 1)   
-#' 
-#' 
-#' 
+#' @export
 gordi_predict <- function(
     pass,
     label = T,
@@ -103,7 +101,7 @@ gordi_predict <- function(
   
   ### Detect mapped vs constant aesthetics
   # colour
-  #' if colour != "" AND ALSO colour represents a colname present in spe_df, then map_colour is TRUE, otherwise is FALSE
+  # if colour != "" AND ALSO colour represents a colname present in spe_df, then map_colour is TRUE, otherwise is FALSE
   map_colour <- !identical(colour, '') && has_name(pred_df, colour) 
   # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
   const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))

@@ -1,0 +1,39 @@
+---
+title: "gordi_vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{gordi_vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+#library(gordi)
+```
+# Introduction
+The `gordi` package was build to help poor students of community ecology deal with community data analysis, especially with ordinations and their visualization.
+
+## General workflow
+The first step to take is to calculate an ordination. The `gordi` package is compatible with the outputs of `vegan` functions, particularly:
+
+- `rda()` for PCA and RDA
+- `cca()` for CA and CCA
+- `capscale()` for PCoA and db-RDA
+- `metaMDS()` for NMDS
+- `decorana()` for DCA
+
+1. The `gordi_read()` function will read the resulting object of the ordination and prepare it for use by other `gordi_` functions. That said, `gordi_read()` is always the first one in the pipeline of `gordi_` functions. 
+
+2. Decide, whether you want to display 'species' or 'sites' scores. Usually it is a good practice to duplay only one type of scores (and choose corresponding scaling in `gordi_read()`), but it is also possible to display both score types (in this case, select please `scaling = 'symmetric'`).
+  
+   2a. If you have decided to display species, use `gordi_species()`
+   2b. If you have decided to display sites, use `gordi_sites()`
+
+

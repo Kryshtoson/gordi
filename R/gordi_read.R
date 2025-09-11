@@ -38,9 +38,7 @@
 #'     \item{predictor_names}{predictor names, or NA for DCA/NMDS}
 #'   }
 #' 
-#' @seealso [gordi_sites()], [gordi_read()], [gordi_predict()]
-#' 
-#' @export
+#' @seealso [gordi_sites()], [gordi_read()], [gordi_predict()], [gordi_species()]
 #' 
 #' @examples
 #' library(vegan)
@@ -49,8 +47,7 @@
 #' m <- capscale(dune ~ 1)
 #' o <- gordi_read(m)
 #' o
-
-
+#' @export
 gordi_read <- function(m,
                        env = NULL,
                        traits = NULL,

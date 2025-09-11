@@ -1,96 +1,76 @@
 #' Draw and edit labels
+#' 
 #' @description
-#' The function [gordi_label()] adds or updates text labels for species, sites and predictors in the current ordination plot, 
-#' stored in `pass$plot` (from either [gordi_species()], [gordi_sites()] or [gordi_predictor()]). 
+#' Adds or updates text labels for species, sites and predictors in the current ordination plot, stored in `pass$plot` (from either [gordi_species()], [gordi_sites()] or [gordi_predictor()]). 
 #' It also takes the whole list object (pass), created by [gordi_read()].
-#' The function can be called at any point in the pipeline, 
-#' it removes any previously added label layers, so labels do not duplicate.  
+#' The function can be called at any point in the pipeline, it removes any previously added label layers, so labels do not duplicate.  
 #' 
 #' @details
-#' The argument `what` is compulsory, it chooses what labels to draw/edit.
+#' **what**
+#' The argument `what` is compulsory, it chooses what labels to draw/edit:
 #' - `what = 'species'` -> species labels at species scores 
 #' - `what = 'sites'` -> site labels at site scores
-#' - `what = 'predictor'` -> predictor labels at predictor scores, the position is re-scales by `scaling_coefficient`
+#' - `what = 'predictor'` -> predictor labels at predictor scores (position is adjusted by `scaling_coefficient`)
 #' 
-#' Label source:
-#' If `shortcut` is not used, labels are taken from `label` (column name).
-#' If `label` stays empty, a default is used:
-#' - species -> the first column of `spe_df` (species_name)
+#' **Label source:**
+#' If `shortcut` is not used, labels are taken from `label` (column name). If `label` stays empty, the defaults are:
+#' - species -> the first column of `spe_df` (species_names)
 #' - sites -> the first column of `site_df`
 #' - predictor -> the first column of `pass$predictor_names`
-#' If `shortcut` is defined (only works for what = 'species'), 
-#' the function creates a label strings from genus and species (also subspecies, when present in the dataset) 
-#' using the requested case and separator.
+#' If `shortcut` is defined (only works for `what = 'species'`), the function creates a label strings from genus and species (also subspecies, when present in the dataset) using the requested case and separator.
 #' 
-#' Colour control:
-#' If label_colour or shortcut_colour is a column name in the relevant data frame, 
-#' the colour is mapped and a fresh colour scale is created with [ggnewscale::new_scale_colour()], so you can apply [gordi_colour()].
-#' If label_colour or shortcut_colour is a constant (hex or colour name), this constant is directly used and no new colour scale is created.
+#' **Colour control:**
+#' If `label_colour` or `shortcut_colour` is a column name in the relevant data frame, the colour is mapped and a fresh colour scale is created with [ggnewscale::new_scale_colour()], so you can apply [gordi_colour()].
+#' If `label_colour` or `shortcut_colour` is a constant (hex or colour name or colour number), the constant colour is used directly and no new colour scale is created.
+#' 
+#' **Shortcut options:**
+#' If the species name is *Stipa eriocaulis*
+#' - `'upper.lower'` -> Sti.eri 
+#' - `'lower.lower'` -> sti.eri 
+#' - `'upper.upper'` -> Sti.Eri 
+#' - `'upperupper'` -> StiEri 
+#' - `'upper_lower'` -> Sti_eri 
+#' - `'lower_lower'` -> sti_eri 
+#' - `'upper_upper'` -> Sti_Eri 
+#' - `'upper-lower'` -> Sti-eri 
+#' - `'lower-lower'` -> sti-eri 
+#' - `'upper-upper'` -> Sti-Eri 
+#' - `'upper*lower'` -> Sti*eri 
+#' - `'lower*lower'` -> sti*eri 
+#' - `'upper*upper'` -> Sti*Eri 
 #' 
 #' @param pass A list object produced by [gordi_read()]
-#' @param what Character; Choose what labels to draw/edit: one of `c('species', 'sites', 'predictor')`.
-#' @param label Character; Specify column in a dataframe used for labels. Character.
-#' For what = 'species' the default is the first column in spe_df (species_names)
-#' For what = 'sites' the default is the first column in site_df
-#' For what = 'predictor' the default is the third column in pred_df (predictor_names)
-#' @param label_colour Change colour for non shortcut labels. 
-#' Either a constant colour (hex or colour name) or a column name to map label colour. If mapped, a new scale colour is used.
-#' @param shortcut Character; Creates shortcuts of species names (no need to define column used for labels, the function takes the first column of spe_df). 
-#' Default is three letter shortcut (e.g. Sti.eri)
-#' Defining shortcut argument:
-#' - shortcut = `'upper.lower'` -> draws e.g. Sti.eri 
-#' - shortcut = `'lower.lower'` -> draws e.g. sti.eri 
-#' - shortcut = `'upper.upper'` -> draws e.g. Sti.Eri 
-#' - shortcut = `'upperupper'` -> draws e.g. StiEri 
-#' - shortcut = `'upper_lower'` -> draws e.g. Sti_eri 
-#' - shortcut = `'lower_lower'` -> draws e.g. sti_eri 
-#' - shortcut = `'upper_upper'` -> draws e.g. Sti_Eri 
-#' - shortcut = `'upper-lower'` -> draws e.g. Sti-eri 
-#' - shortcut = `'lower-lower'` -> draws e.g. sti-eri 
-#' - shortcut = `'upper-upper'` -> draws e.g. Sti-Eri 
-#' - shortcut = `'upper*lower'` -> draws e.g. Sti*eri 
-#' - shortcut = `'lower*lower'` -> draws e.g. sti*eri 
-#' - shortcut = `'upper*upper'` -> draws e.g. Sti*Eri 
-#' @param shortcut_colour Change colour for shortcut labels.
-#' #' Either a constant colour (hex or colour name) or a column name to map label colour. If mapped, a new scale colour is used.
-#' @param shortcut_length Integer; Change the length of shortcuts. Number of letters to take from genus/species. 
-#' Default is shortcut_length = 3 (e.g. Sti.eri).
-#' @param size Integer; Change size of labels. Numeric text size in mm (as in [ggplot::geom_text()]). 
-#' Default size = 3.9.
-#' @param scaling_coefficient Coefficient used for adjusting the position of predictor label. 
-#' Numeric (0:1).
-#' For more information see also [gordi_predict()].
-#' @param nudge_x Integer; Numeric offset on x axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
-#' @param nudge_y Integer; Numeric offset on y axis added to label position (passed to [ggplot::geom_text()] or [geom_text_repel()])
-#' @param max.overlaps Integer; Excludes label when they overlap too many things. Used only when `repel_label = TRUE`.
-#' Details in [geom_text_repel()]
-#' Default `max.overlaps = 10`
-#' @param repel_label Logical; Define whether to use geom_text or geom_text_repel.
-#' Default `repel_label = FALSE` uses [geom_text()]
-#' `repel_label = TRUE` uses [geom_text_repel()]
+#' @param what Character; which labels to draw/edit: one of `'species'`, `'sites'`, `'predictor'`.
+#' @param label Character; a column in env dataframe for sites or column name in env table for predictors are used for site and predictor labels, species name are column names from spe table - this cannot be changed.
+#' @param label_colour Character; colour for non-shortcut labels (constant or column name).
+#' @param shortcut Character; creates shortcuts of species names (for `what = 'species'` only).
+#' @param shortcut_colour Character; colour for shortcut labels (constant or column name).
+#' @param shortcut_length Integer; number of letters to take from genus/species for shortcuts.
+#' @param size Numeric; text size in mm (as in `ggplot::geom_text()`). Default size = 3.9.
+#' @param scaling_coefficient Numeric; used to adjust predictor label positions. For more information see [gordi_predict()].
+#' @param nudge_x Numeric; offset on x axis for label position. (passed to [ggplot::geom_text()] or [geom_text_repel()]).
+#' @param nudge_y Numeric; offset on y axis for label position (passed to [ggplot::geom_text()] or [geom_text_repel()]).
+#' @param max.overlaps Integer; maximum allowed overlaps for labels (when `repel_label = TRUE`). Details in [geom_text_repel()]. Default `max.overlaps = 10`
+#' @param repel_label Logical; whether to use `geom_text_repel` instead of `geom_text()`.
+#' 
 #' @return The updated `pass` object with label layers added to `pass$plot`.
+#'
 #' @examples
 #' # species labels, black coloured text, default size
-#' gordi_read(m, env)|>
-#' gordi_species(label = F)|>
-#' gordi_label(what = 'species')
+#' gordi_read(m, env) |> gordi_species(label = F) |> gordi_label(what = 'species')
 #' 
 #' #species shortcut labels, coloured by trait column, repelled
-#' gordi_read(m, env, traits)|>
-#' gordi_species(label = FALSE)|>
-#' gordi_label(what = 'species', shortcut = 'upper.lower', shortcut_colour = 'form', repel_label = TRUE)
+#' gordi_read(m, env, traits) |> 
+#'    gordi_species(label = FALSE) |>
+#'    gordi_label(what = 'species', shortcut = 'upper.lower', shortcut_colour = 'form', repel_label = TRUE)
 #' 
 #' #site labels by specific env column, constant colour
-#' gordi_read(m, env)|>
-#' gordi_sites()|>
-#' gordi_label(what = 'sites', label = 'elevation', label_colour = 'green')
+#' gordi_read(m, env) |> 
+#'    gordi_sites() |>
+#'    gordi_label(what = 'sites', label = 'elevation', label_colour = 'green')
 #'
-#'@seealso [gordi_read()], [gordi_species()], [gordi_sites()], [gordi_colour()],[gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()] 
-#'@export
-
-
-
-
+#' @seealso [gordi_read()], [gordi_species()], [gordi_sites()], [gordi_colour()],[gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()] 
+#' @export
 gordi_label <- function(pass,
                         what = c('species', 'sites', 'predictor'), #choose type of label
                         label = '', #column with label names
@@ -150,23 +130,23 @@ gordi_label <- function(pass,
     #default labeling column is the first column of spe_df
     text_col <- names(spe_df)[1]
     
-    #'shortcuts
+    #shortcuts
     if(!identical(shortcut, '')){
-      #' split species  into individual tokens
+      # split species  into individual tokens
       parts_list <- str_split(spe_df[[1]], '\\s')
-      #' remove tokens like Sect., sect.... 
+      # remove tokens like Sect., sect.... 
       rank_tokens <- c('sect\\.', 'Sect\\.', 'cf\\.')
       rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
       parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
-      #' detect subspecies and take epithet after it
+      # detect subspecies and take epithet after it
       rx_sub <- regex('^(subsp\\.|ssp\\.)$')
       has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
-      #'individual genus, species, subspecies
+      # individual genus, species, subspecies
       genus <- map_chr(parts_list, 1)
       epithet <- map_chr(parts_list, 2)
       subsp <- vapply(parts_list, function (x) { i <- match(TRUE, str_detect(x, rx_sub))
       x[i + 1L]}, character(1))
-      #'shortcuts based on shortcut_length
+      # shortcuts based on shortcut_length
       gN <- str_sub(genus, 1, shortcut_length)
       sN <- str_sub(epithet, 1, shortcut_length)
       subN <- str_sub(subsp, 1, shortcut_length)
@@ -214,7 +194,7 @@ gordi_label <- function(pass,
         warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
       }
       
-      #' creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
+      # creates tibble with short names if subspecies is non existent it takes short_non otherwise short_sub
       spe_df <- spe_df|>
         mutate(short_name = ifelse(has_sub, short_sub, short_non))
       text_col <- 'short_name' } #by default text_col is the first column of spe_df, if shortcut is defined, text_col is short_name
