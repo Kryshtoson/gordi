@@ -10,30 +10,149 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  dpi = 300,
+  out.width = "100%"
 )
 ```
 
 ```{r setup}
 #library(gordi)
+library(tidyverse)
+library(vegan)
+library(ggrepel)
+devtools::load_all()
 ```
+
 # Introduction
-The `gordi` package was build to help poor students of community ecology deal with community data analysis, especially with ordinations and their visualization.
+
+The `gordi` package was developed to help poor students of community ecology deal with community data analysis, especially when it comes to **ordination methods** and their visualization.
+
+With `gordi`, you can:
+
+-   take results from common ordinations in the **vegan** package, particularly:
+
+    -   `rda()` for PCA and RDA
+    -   `cca()` for CA and CCA
+    -   `capscale()` for PCoA and db-RDA
+    -   `metaMDS()` for NMDS
+    -   `decorana()` for DCA
+
+-   visualize them quickly with clear and customizable plots via **ggplot2**
+
+-   and have access to **ggplot2** for final polishing
 
 ## General workflow
-The first step to take is to calculate an ordination. The `gordi` package is compatible with the outputs of `vegan` functions, particularly:
 
-- `rda()` for PCA and RDA
-- `cca()` for CA and CCA
-- `capscale()` for PCoA and db-RDA
-- `metaMDS()` for NMDS
-- `decorana()` for DCA
+1.  The first step to take is to calculate an ordination. The `gordi` package is compatible with the outputs of `vegan` functions mentioned above.
 
-1. The `gordi_read()` function will read the resulting object of the ordination and prepare it for use by other `gordi_` functions. That said, `gordi_read()` is always the first one in the pipeline of `gordi_` functions. 
+> **Note**: Don't panic when you see the whole long output in console. This is the "pass" object which travels through `gordi_` functions and you can easily check if you entered the right data.
 
-2. Decide, whether you want to display 'species' or 'sites' scores. Usually it is a good practice to duplay only one type of scores (and choose corresponding scaling in `gordi_read()`), but it is also possible to display both score types (in this case, select please `scaling = 'symmetric'`).
-  
-   2a. If you have decided to display species, use `gordi_species()`
-   2b. If you have decided to display sites, use `gordi_sites()`
+Example:
 
+```{r}
+#library(gordi)
 
+# Load example dataset
+data(dune)
+data("dune.env")
+
+# Calculate ordination
+# (here is db-RDA on the dune dataset with squarerooted coverages and squarerooted Bray-Curtis distances)
+m <- capscale(sqrt(dune) ~ A1, data = dune.env, distance = 'bray', sqrt.dist = T)
+```
+
+2.  The `gordi_read()` function will read the resulting object of the ordination and prepare it for use by other `gordi_` functions. That said, `gordi_read()` is always the first one in the pipeline of `gordi_` functions.
+
+```{r}
+# Print ordination result
+m
+
+# Use `gordi_read()` to read the ordination result
+obj <- m |> gordi_read()
+print(obj)
+
+```
+
+3.  Decide, whether you want to display 'species' or 'sites' scores. Usually it is a good practice to display only one type of scores (and choose corresponding scaling in `gordi_read()`), but it is also possible to display both score types (in this case, please select `scaling = 'symmetric'`).
+
+    -   If you have decided to display species, use `gordi_species()`
+    -   If you have decided to display sites, use `gordi_sites()`
+
+```{r}
+obj <- obj |>  # we want to display species, we choose scaling = 'species'
+  gordi_species()
+
+obj
+
+```
+
+In `gordi_species()` and `gordi_sites()` you can control colour, fill, shape, and many more things regarding symbology. You can e.g. colour symbols by a variable or set colour statically (see help of aforementioned functions for details). However, if you want to further customize colours or shapes, continue to step 4.
+
+```{r}
+# At first, we need to prepare traits table to be compatible with species table.
+# Basically, it means, that the first column in the traits table must contain
+# species names as used in species table
+data('dune.taxon')
+traits <- as_tibble(dune.taxon, rownames = 'species')
+
+# Now we continue with the gordi pipeline
+obj <- m |> gordi_read(env = dune.env,          # table with environmental variables
+                traits = traits,     # table with traits, respective in this case,
+                                         # table with species names, families and 
+                                         # other stuff is used
+                choices = 1:2,           # choose 1st and 2nd ordination axes
+                correlation = T,
+                scaling = 'species') |>  # we want to display species, we choose scaling = 'species'
+  gordi_species(colour = 'Subclass',      # colour may be set statically,
+                                         # or dynamically, by using name of some
+                                         # variable in traits data frame
+                alpha = 0.8,             # opacity of symbols
+                arrow_size = 0.5)        # changes arrow size (in cm)
+
+obj
+
+```
+
+4.  If you want to select some predefined or custom colour scale or different than default shapes, you have to do it immediately after `gordi_species()` or `gordi_sites()` has been used, using `gordi_colour()` and `gordi_shape()` functions.
+    -   `gordi_colour()` controls both, colour and fill
+    -   `gordi_shape()` controls point type
+
+```{r}
+obj <- obj |> 
+  gordi_colour(scale = 'discrete',       # first, you must define the scale (see 
+                                         # ?gordi_colour() for options)
+               family = 'viridis')        # then you must select from a family of
+                                         # colour scales or set one manually 
+
+obj
+```
+
+5.  In case, you have calculated constrained ordination (`rda`, `CCA`, `db-RDA`), and you want to display predictor, use `gordi_predict()`. Notice, so far only continuous predictors are allowed.
+
+```{r}
+obj <- obj |> 
+  gordi_predict(
+    colour = 'red',
+    alpha = 1,
+    arrow_size = 0.5,
+    scaling_coefficient = 1,
+  )
+
+obj
+```
+
+6.  Now, when you finally have all the points and arrows on its places, you may want to label the symbols and customize the labeling - and this is done with `gordi_label()` function. Unlike `gordi_colour()` and `gordi_shape()` functions, which must be used directly after what they should customize, this function may be used anytime. We suggest to cast it at the end of `gordi_` pipeline.
+
+7.  If you want to further customize the ordination plot with `theme()` functions, you need to do one more thing. After all `gordi_` functions you need to use `gordi_plot()` which extracts the ggplot object and makes it editable by standard `ggplot2` functions, e.g., `theme()`.
+
+## Limitations
+
+Even though `gordi` can do a lot of things, there are still many parts of the intended package, which are now under construction. What you may expect it to do but is not possible yet:
+
+-   displaying results of constrained ordination (`rda`, `CCA`, `db-RDA`) where categorical predictor was used
+-   displaying results of constrained ordination with interactions
+-   passively project predictors (like in `vegan::envfit()`)
+-   displaying 'spiders', 'hulls' and 'ellipses' when you want to symbolise clusters
