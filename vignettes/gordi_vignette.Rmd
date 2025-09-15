@@ -144,9 +144,77 @@ obj <- obj |>
 obj
 ```
 
-6.  Now, when you finally have all the points and arrows on its places, you may want to label the symbols and customize the labeling - and this is done with `gordi_label()` function. Unlike `gordi_colour()` and `gordi_shape()` functions, which must be used directly after what they should customize, this function may be used anytime. We suggest to cast it at the end of `gordi_` pipeline.
+6.  Now, when you finally have all the points and arrows on its places, you may want to label the symbols and customize the labeling - and this is done with `gordi_label()` function which overrides labels displayed by `gordi_species()`, `gordi_sites()` or `gordi_predict()`. Its main advantage comes with **species** because there are many options for creating shortcuts. Unlike `gordi_colour()` and `gordi_shape()` functions, which must be used directly after what they should customize, this function may be used anytime. We suggest to cast it at the end of `gordi_` pipeline. 
 
-7.  If you want to further customize the ordination plot with `theme()` functions, you need to do one more thing. After all `gordi_` functions you need to use `gordi_plot()` which extracts the ggplot object and makes it editable by standard `ggplot2` functions, e.g., `theme()`.
+```{r}
+obj <- obj |> 
+  gordi_label(what = 'species',        # first, we need to define what we want to label
+              label_colour = 'green4',
+              size = 2) |> 
+  gordi_label(what = 'predictor',
+              label_colour = 'red',
+              nudge_y = 0.025)
+
+obj
+```
+
+   For demonstrating the power of shortcuts, we need to update the species names in the dune dataset to full names...
+   
+```{r}
+# First we create provisional species names containing two words
+dune2 <- dune |> 
+  rename_with(~str_c(
+    substr(traits$species, 1, 4),
+    substr(traits$species, 5, 8),
+    sep = ' '
+  ))
+
+traits2 <- traits |> 
+  mutate(species2 = str_c(
+    substr(traits$species, 1, 4),
+    substr(traits$species, 5, 8),
+    sep = ' '
+  ), .before = species)
+
+# Second, we calculate new ordination with dune2
+obj <- capscale(sqrt(dune2) ~ A1, data = dune.env, distance = 'bray', sqrt.dist = T)
+
+# Third, we build gordi pipeline
+obj |> 
+  gordi_read(env = dune.env,
+             traits = traits2,
+             choices = 1:2,
+             scaling = 'species',
+             correlation = T) |> 
+  gordi_species(colour = 'Subclass') |> 
+  gordi_colour(scale = 'discrete', family = 'viridis') |> 
+  gordi_predict() |> 
+  gordi_label(what = 'species',
+              shortcut = 'upper_lower',
+              shortcut_colour = 'Subclass',
+              repel_label = T) |> 
+  gordi_colour(scale = 'discrete', family = 'viridis')
+
+obj
+```
+
+7. If you want to further customize the ordination plot with `theme()` functions, you need to do one more thing. After all `gordi_` functions you need to use `gordi_plot()` which extracts the ggplot object and makes it editable by standard `ggplot2` functions, e.g., `theme()`.
+
+> **Note**: Don't forget, that traditional **ggplot2** functions use the `+` sign, not pipe operator ` |> `.
+
+```{r}
+# Nevim, proc tahle svina zas nefunguje
+
+# obj |> 
+#   gordi_plot() +
+#   theme_dark() +
+#   labs(title = 'This is a very nice plot',
+#        subtitle = 'Do not try to argue with the authors, it is a nicely elaborated plot') +
+#   theme(legend.position = 'bottom',
+#         plot.title = element_text(colour = 'red'),
+#         plot.subtitle = element_text(face = 'italic'),
+#         axis.title = element_text(family = 'serif', colour = 'lightblue4')) 
+```
 
 ## Limitations
 
