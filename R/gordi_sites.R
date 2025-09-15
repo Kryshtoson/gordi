@@ -82,20 +82,65 @@ gordi_sites <- function(pass,
   map_colour <- !identical(colour, '') && has_name(site_df, colour)
   const_colour <- const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
   
+  if(!identical(colour, '')){
+    message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_sites()`.")
+    if(!map_colour && !const_colour){
+      warning("`colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+      colour <- ''
+    }
+  }
+  
   map_size <- !identical(size, '') && has_name(site_df, size)
   const_size <- !map_size && is.numeric(size)
+  
+  if(!identical(size, '')){
+    if(!map_size && !const_size){
+      warning("`size` must be either a numeric constant or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      size <- ''
+    }
+  }
   
   map_shape <- !identical(shape, '') && has_name(site_df, shape)
   const_shape <- !map_shape && is.numeric(shape)
   
+  if(!identical(shape, '')){
+    message("To customize shapes (similarly to `ggplot2::scale_shape_()` functions), please use gordi_shape() right after `gordi_sites()`.")
+    if(!map_shape && !const_shape){
+      warning("`shape` must be either a numeric constant (0-25) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      shape <- ''
+    }
+  }
+  
   map_fill <- !identical(fill, '') && has_name(site_df, fill)
-  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())
+  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())|| (is.character(fill) && fill %in% palette()) || (is.numeric(fill) && fill %in% seq_along(palette()))
+  
+  if(!identical(fill, '')){
+    message("To customize fill colours (similarly to `ggplot2::scale_fill_()` functions), please use gordi_colour() right after `gordi_sites()`.")
+    if(!map_fill && !const_fill){
+      warning("`fill` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+      fill <- ''
+    }
+  }
   
   map_alpha <- !identical(alpha, '') && has_name(site_df, alpha)
   const_alpha <- !map_alpha && is.numeric(alpha)
   
+  if(!identical(alpha, '')){
+    if(!map_alpha && !const_alpha){
+      warning("`alpha` must be either a numeric constant (0-1) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      alpha <- ''
+    }
+  }
+  
   map_stroke <- !identical(stroke, '') && has_name(site_df, stroke)
   const_stroke <- !map_stroke && is.numeric(stroke)
+  
+  if(!identical(stroke, '')){
+    if(!map_stroke && !const_stroke){
+      warning("`stroke` must be either a numeric constant or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      stroke <- ''
+    }
+  }
   
   # Prepare aes arguments (only mapped)
   aes_args_point <- list(x = quote(Axis_site1), y = quote(Axis_site2))
@@ -136,12 +181,16 @@ gordi_sites <- function(pass,
   p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
  
   if (isTRUE(label)){
+    message("Labels have been drawn. To customize labels, please use `gordi_label()` right after `gordi_sites()`.")
     labcol <- names(site_df)[1]
     if (isTRUE(repel_label)){
       p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black') 
     } else {
       p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black')
     }
+  } else if(is.character(label)){
+      warning("`label` must be logical (TRUE/FALSE). To customize labels please use `gordi_label()` right after `gordi_sites()`. Ignoring `label` input, setting `label = FALSE`.")
+    label <- FALSE
     }
    
   p <- p + ggnewscale::new_scale("size") 
@@ -153,3 +202,4 @@ gordi_sites <- function(pass,
   
   return(pass)
 }
+
