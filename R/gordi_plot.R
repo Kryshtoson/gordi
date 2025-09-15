@@ -45,8 +45,3 @@ gordi_plot <- function(pass,
   
   p
 }
-
-gordi_read(m, env, traits)|>
-  gordi_sites()|>
-  gordi_plot()+
-  theme_minimal()
