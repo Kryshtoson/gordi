@@ -5,11 +5,11 @@ Version: 0.4.0
 Authors@R: c(
     person("Branislav", "Kopcan", email = "add", role = "cre", 
     comment = "Original author and creator of gordi"),
-    person("Stepanka", "Pustkova", email = "add", role = "cre", 
+    person("Stepanka", "Pustkova", email = "add", role = "aut", 
     comment = "Original author and creator of gordi"),
-    person("Stepanka", "Pustkova", email = "add", role = "cre", 
+    person("Krystof", "Chytry", email = "krystof.chytry@gmail.com", role = "aut", 
     comment = "Original author and creator of gordi"))
-Maintainer: Branislav Kopcan <email>
+Maintainer: Branislav Kopcan <kopcanb@gmail.com>
 Description: Visualize ...
 License: GPL-2
 Encoding: UTF-8
@@ -17,8 +17,9 @@ LazyData: true
 URL: https://github.com/dklinges9/mcera5
 BugReports: https://github.com/dklinges9/mcera5/issues
 Imports:
-    tibble,
-    tidync
+    tidyverse,
+    vegan,
+    ggrepel
 Remotes:
 RoxygenNote: 7.3.2
 Suggests: 
