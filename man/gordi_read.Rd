@@ -27,12 +27,12 @@ trait value in its dedicated column}
 \item{choices}{Numeric vector of selected ordination axes; defaults to the
 first two axes}
 
-\item{scaling}{Scaling of species and site scores; see `?scores.cca` or
-related functions}
+\item{scaling}{Scaling of species and site scores; see [vegan::scores.cca()]}
 
-\item{correlation}{Logical; default = F, see `?scores.cca` or `?scores.rda` for details}
+\item{correlation}{Logical; default = FALSE, see [vegan::scores.cca()] or 
+[vegan::scores.rda()] for details}
 
-\item{hill}{Logical; default = F, see `?scores.cca` for details}
+\item{hill}{Logical; default = FALSE, see [vegan::scores.cca()] for details}
 }
 \value{
 A list with elements:
