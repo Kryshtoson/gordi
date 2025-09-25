@@ -17,9 +17,12 @@ LazyData: true
 URL: https://github.com/dklinges9/mcera5
 BugReports: https://github.com/dklinges9/mcera5/issues
 Imports:
-    tidyverse,
-    vegan,
-    ggrepel
+    ggplot2,
+    ggnewscale,
+    ggrepel,
+    dplyr,
+    tibble,
+    rlang
 Remotes:
 RoxygenNote: 7.3.2
 Suggests: 
