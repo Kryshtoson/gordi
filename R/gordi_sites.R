@@ -42,8 +42,16 @@
 #' 
 #' @seealso [gordi_read()], [gordi_species()], [gordi_label()], [gordi_colour()], [gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()]
 #' 
-#' @import ggplot2
-#' @import ggnewscale
+#' @importFrom ggplot2 ggplot geom_point aes theme_bw labs element_text element_blank
+#' @importFrom ggnewscale new_scale_colour new_scale_fill new_scale
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom dplyr bind_cols
+#' @importFrom rlang sym
+#' @importFrom tibble tibble
+#' @importFrom dplyr bind_cols
+#' @importFrom tibble has_name
+#' @importFrom rlang sym
+#' @importFrom ggrepel geom_text_repel
 #' 
 #' @export
 gordi_sites <- function(pass,
