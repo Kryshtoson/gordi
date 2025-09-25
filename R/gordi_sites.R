@@ -41,6 +41,10 @@
 #' o |> gordi_sites(label = FALSE, colour = 'green')
 #' 
 #' @seealso [gordi_read()], [gordi_species()], [gordi_label()], [gordi_colour()], [gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()]
+#' 
+#' @import ggplot2
+#' @import ggnewscale
+#' 
 #' @export
 gordi_sites <- function(pass,
                         label = TRUE,
