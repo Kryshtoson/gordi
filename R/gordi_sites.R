@@ -42,7 +42,7 @@
 #' 
 #' @seealso [gordi_read()], [gordi_species()], [gordi_label()], [gordi_colour()], [gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()]
 #' 
-#' @importFrom ggplot2 ggplot geom_point geom_text theme_bw labs element_text element_blank
+#' @import ggplot2
 #' @importFrom ggnewscale new_scale_colour new_scale_fill new_scale
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom dplyr bind_cols
@@ -72,7 +72,7 @@ gordi_sites <- function(pass,
     p <- ggplot2::ggplot() +
       theme_bw() +
       labs(x = actual_labs[1], y = actual_labs[2]) +
-      theme(
+      ggplot2::theme(
         text = element_text(size = 15),
         panel.grid = element_blank(),
         legend.justification = c(1, 1)
