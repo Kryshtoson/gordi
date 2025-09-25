@@ -69,7 +69,7 @@ gordi_sites <- function(pass,
   
   # plot set up  
   if (is.null(pass$plot)) { 
-    p <- ggplot() +
+    p <- ggplot2::ggplot() +
       theme_bw() +
       labs(x = actual_labs[1], y = actual_labs[2]) +
       theme(
