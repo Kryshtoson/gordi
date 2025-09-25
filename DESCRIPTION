@@ -23,5 +23,6 @@ Remotes:
 RoxygenNote: 7.3.2
 Suggests: 
     knitr,
+    roxygen2,
     rmarkdown
 VignetteBuilder: knitr
