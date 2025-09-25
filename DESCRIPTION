@@ -17,8 +17,8 @@ LazyData: true
 URL: https://github.com/dklinges9/mcera5
 BugReports: https://github.com/dklinges9/mcera5/issues
 Imports:
-    tibble,
-    tidync
+    tidyverse,
+    ggrepel
 Remotes:
 RoxygenNote: 7.3.2
 Suggests: 
