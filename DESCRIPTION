@@ -5,9 +5,9 @@ Version: 0.4.0
 Authors@R: c(
     person("Branislav", "Kopcan", email = "add", role = "cre", 
     comment = "Original author and creator of gordi"),
-    person("Stepanka", "Pustkova", email = "add", role = "cre", 
+    person("Stepanka", "Pustkova", email = "add", role = "aut", 
     comment = "Original author and creator of gordi"),
-    person("Krystof", "Chytry", email = "krystof.chytry@gmail.com", role = "cre", 
+    person("Krystof", "Chytry", email = "krystof.chytry@gmail.com", role = "aut", 
     comment = "Original author and creator of gordi"))
 Maintainer: Branislav Kopcan <email>
 Description: Visualize ...
