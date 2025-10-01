@@ -37,6 +37,19 @@ gordi_shape <- function(pass,
   
   scale <- match.arg(scale)
   sc <- function(suffix) paste0('scale_shape_', suffix)
+  
+  if (!is.null(values)){
+    if (!is.numeric(values) && !all(values %in% 0:25)){
+      warning("`values` should be defined as numeric codes from 0 to 25. Ignoring invalid input.")
+      values <- NULL
+    }
+  }
+  
+  if (scale == 'discrete' || scale == ''){
+    if (is.null(values)){
+    warning("`scale = 'discrete'` but no `values` specified. Using default shape values.")
+    }
+  }
 
   
   build_scale_obj <- function(){
@@ -44,6 +57,7 @@ gordi_shape <- function(pass,
       args <- purrr::compact(list(name = name, breaks = breaks, labels = labels, limits = limits, guide = guide))
       return(do.call(sc('identity'), args))
     }
+    
     
     
     if(!is.null(values)){

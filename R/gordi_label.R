@@ -93,8 +93,30 @@ gordi_label <- function(pass,
   what <- match.arg(what)
   
   #check whether there is already a plot
-  if (is.null(pass$plot)) warning('No plot yet, draw it first!') 
-  p <- pass$plot
+  # if (is.null(pass$plot)) warning('No plot yet, draw it first!') 
+  # p <- pass$plot
+  
+  ### axis names used in spe_df 
+  names(pass$species_scores) <- paste0("Axis_spe", 1:2)
+  
+  
+  ### ordination types -> later used in axis labels 
+  if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
+  
+  ### plot
+  # Creates blank plot if this function is used as the first one after gordi_read()
+  # or passes already existing plot
+  
+  if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
+    p <- ggplot() +
+      theme_bw() +
+      labs(x = actual_labs[1], y = actual_labs[2]) +
+      theme(
+        text = element_text(size = 15),
+        panel.grid = element_blank(),
+        legend.justification = c(1, 1))
+  } else {p <- pass$plot}
   
   #function removing label layers if they have been used before. Makes sure no duplicate labels
   remove_label_layers_for <- function(plot, axis_x_col) { #axis_x_col is either Axis_spe1 or Axis_spe2
@@ -112,6 +134,8 @@ gordi_label <- function(pass,
     })
     plot
   }
+  
+
   
   #species labels
   
@@ -199,28 +223,69 @@ gordi_label <- function(pass,
         mutate(short_name = ifelse(has_sub, short_sub, short_non))
       text_col <- 'short_name' } #by default text_col is the first column of spe_df, if shortcut is defined, text_col is short_name
     
+    if (what == 'species' && identical(shortcut, '')){
+      warning("Default full species name labels are being drawn, if you want species short names, please define `shortcut` (e.g. `shortcut = 'upper.lower'`.")
+    }
+    if (!identical(shortcut, '')){
+      warning("Note you can specify the shortcut colour with argument `shortcut_colour` (e.g. `shortcut_colour = 'red'`) and the shortcut length `shortcut_length` (e.g. `shortcut_length = 4`).")
+    }
+    
     #whether colour is mapped by a column or is a constant (both labels and shortcuts)
     
     map_shortcut_colour <- !identical(shortcut_colour, '') && has_name(spe_df, shortcut_colour)
     const_shortcut_colour <- !identical(shortcut_colour, '') && !map_shortcut_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", shortcut_colour) || shortcut_colour %in% grDevices::colours())|| (is.character(shortcut_colour) && shortcut_colour %in% palette()) || (is.numeric(shortcut_colour) && shortcut_colour %in% seq_along(palette()))
     
+    if(!identical(shortcut_colour, '')){
+      message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_label()`.")
+      if(!map_shortcut_colour && !const_shortcut_colour){
+        warning("`shortcut_colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+        colour <- ''
+      }
+    }
+    
     map_label_colour <- !identical(label_colour, '') && has_name(spe_df, label_colour)
     const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
+    
+    if(!identical(label_colour, '')){
+      message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_label()`.")
+      if(!map_label_colour && !const_label_colour){
+        warning("`label_colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+        colour <- ''
+      }
+    }
     
     if (map_shortcut_colour || map_label_colour){
       #if shortcut-colour or label_colour start a new colour scale
       col_var <- if (map_shortcut_colour) shortcut_colour else label_colour #col_var is shortcut_colour when map_shortcut_colour is true else its label_colour
       p <- p + ggnewscale::new_scale_colour()
-      mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col), colour = !!sym(col_var))
       
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
+      aes_args <- list(
+        x = quote(Axis_spe1),
+        y = quote(Axis_spe2),
+        label = sym(text_col),
+        colour = sym(col_var)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
+      #mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col), colour = !!sym(col_var))
+      #if (map_label_size) mapping$size <- sym(size)
+      
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, 
+                                                        size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } #constant colour scale
     else {
       col_const <- if (const_label_colour) label_colour
       else if (const_shortcut_colour) shortcut_colour
       else 'black'
-      mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col))
+      
+      aes_args <- list(
+        x = quote(Axis_spe1),
+        y = quote(Axis_spe2),
+        label = sym(text_col)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
       if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
       
@@ -241,24 +306,54 @@ gordi_label <- function(pass,
       label
     } else {names(site_df)[1]}
     
+    if (!identical(label, '') && !label %in% names(site_df)){
+      warning("`label` is used to specify column used for labels. `label = ", label, "` is not a valid column, please use an existing column name. Invalid input, first column in `env` dataframe is being used.")
+    }
+    
     #mapped and constant site label colour
     map_label_colour <- !identical(label_colour, '') && has_name(site_df, label_colour)
     const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
     
+    if(!identical(label_colour, '')){
+      message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_label()`.")
+      if(!map_label_colour && !const_label_colour){
+        warning("`label_colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+        colour <- ''
+      }
+    }
+    
     if (map_label_colour){
       #new colour scale
       p <- p + ggnewscale::new_scale_colour()
-      mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
+      
+      aes_args <- list(
+        x = quote(Axis_site1),
+        y = quote(Axis_site2),
+        label = sym(labcol),
+        colour = sym(label_colour)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
+      # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
       if (isTRUE(repel_label)) 
         p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black' #if not specified label_colour it will be black
-      mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol))
+      
+      aes_args <- list(
+        x = quote(Axis_site1),
+        y = quote(Axis_site2),
+        label = sym(labcol)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
+     # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol))
       if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     }
   }
+  
   if (what == 'predictor') {
     
     pred_df <- bind_cols(pass$predictor_scores, pass$predictor_names)
@@ -282,15 +377,42 @@ gordi_label <- function(pass,
     
     map_label_colour <- !identical(label_colour, '') && has_name(pred_df, label_colour)
     const_label_colour <- !identical(label_colour, '') && !map_label_colour && (grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", label_colour) || label_colour %in% grDevices::colours())|| (is.character(label_colour) && label_colour %in% palette()) || (is.numeric(label_colour) && label_colour %in% seq_along(palette()))
+    
+    if(!identical(label_colour, '')){
+      message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_label()`.")
+      if(!map_label_colour && !const_label_colour){
+        warning("`label_colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+        colour <- ''
+      }
+    }
+    
+  
     if (map_label_colour){
       p <- p + ggnewscale::new_scale_colour()
-      mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
+      
+      aes_args <- list(
+        x = quote(Axis_pred1),
+        y = quote(Axis_pred2),
+        label = sym(labcol),
+        colour = sym(label_colour)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
+      # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
       if(isTRUE(repel_label))
         p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black'
-      mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol))
+      
+      aes_args <- list(
+        x = quote(Axis_pred1),
+        y = quote(Axis_pred2),
+        label = sym(labcol)
+      )
+      mapping <- do.call(ggplot2::aes, aes_args)
+      
+     # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol))
       if (isTRUE(repel_label))
         p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
       else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)

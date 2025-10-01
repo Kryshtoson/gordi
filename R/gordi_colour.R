@@ -74,6 +74,92 @@ gordi_colour <- function(pass,
   sc <- function(suffix){
     paste0('scale_', if (isTRUE(fill)) 'fill' else 'colour', '_', suffix)
   }
+  
+  is_hex   <- function(x) 
+    is.character(x) && grepl("^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", x) #checks whether x is character as well as hex colour code
+  
+  is_colname <- function(x) 
+    is.character(x) && x %in% grDevices::colours() #checks whether x is a character as well as colour name in r ('red', 'blue'...)
+  
+  is_numcol <- function(x)
+    is.numeric(x)  && x <= length(palette()) #checks if x is a colour number
+  
+  is_col   <- function(x) 
+    is_hex(x) || is_colname(x) || is_numcol(x) #checks if x is hex colour code or colour name in R
+    
+    all_cols <- function(v) {
+      if(is.numeric(v)){
+        all(vapply(v, is_numcol,, logical(1)))
+        } else if(is.character(v)){
+            length(v) > 0 && all(vapply(v, is_col, logical(1)))} else {FALSE}
+          } #when values = c('red', '#FF00', 1,..)
+    
+    if(scale == 'discrete' && family == 'manual'){
+      message("To customise discrete manual colours, supply `values` (e.g. values = c('red', 'green',...).")
+      if(is.null(values) || !all_cols(values)){
+        stop("For `scale = 'discrete' and family = 'manual'`, `values` must be a valid vector of colours (names or hex code) or a numeric code. Ignoring input.")
+      }
+    }
+    
+    viridis_options <- c('magma', 'inferno', 'plasma', 'viridis', 'cividis', 'rocket', 'mako', 'turbo', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+    if (family == 'viridis' && !is.null(option)){
+      message("To customize viridis colour scales, please use argument `option`, valid values are magma, inferno, plasma, viridis, cividis, rocket, mako, turbo and letters A-H, e.g. `option = 'viridis'`")
+    if (!option %in% viridis_options){
+      warning("`option = ", option, "` is not a recognized viridis colour palette. Default palette is being used.")
+      option <- NULL
+    }
+    }
+    
+    if (family ==  'brewer'){
+      message("To customise brewer colour palettes, please set `palette_name` (e.g. palette_name = 'Set1'). See RColorBrewer::display.brewer.all() for more colour options. ")
+      if (!is.null(palette_name) && !palette_name %in% rownames(RColorBrewer::brewer.pal.info)){
+        warning("`palette_name = ", palette_name, "` not found in RColorBrewer. Using default palette colour ('Set1' for discrete, 'YlGnBu' for continuous).")
+        palette_name <- NULL
+      }
+    }
+    
+    #direction of colour palette
+    if (!is.null(direction) && !direction %in% c(-1, 1)){
+      message("`direction` controls palette order. Use 1 (default) or -1 (reversed).")
+      warning("`direction = ", direction, "` is invalid. Default `direction = 1` is being used.")
+      direction <- 1
+    }
+    
+    #corrected  hue of the colour palette
+    if (!is.null(begin) && (begin < 0 || begin > 1)){
+      warning("`begin` must be between 0 and 1. `begin = ", begin, "` is out of range. Setting `begin` to default 0.")
+      begin <- 0
+    }
+    
+    if (!is.null(end) && (end < 0 || end > 1)){
+      warning("`end` must be between 0 and 1. `end = ", end, "` is out of range. Setting `end` to default 0.")
+      end <- 0
+    }
+    
+    #checking for alpha
+    if (!is.null(alpha) && (alpha < 0 || alpha > 1)){
+      warning("`alpha` controls transparency and must be between 0 and 1. `alpha = ", alpha, "` is out of range. Ignoring input, default `alpha = 1` is being used.")
+      alpha <- 1
+    }
+    
+    if (!is.null(n.breaks) && (!is.numeric(n.breaks) || n.breaks <= 1)){
+      warning("`n.breaks` controls the number of breaks used in steps colour scales. `n.breaks = `", n.breaks, "` is invalid. Ignoring input, ggplot will choose the breaks.")
+      n.breaks <- NULL
+    }
+    
+    #type in scale_colour_fermenter and scale_colour_brewer
+    valid_types <- c('seq', 'div', 'qual')
+    
+    if (!is.null(type) && !type %in% valid_types){
+      warning("For brewer palettes, `type` should match the palette family: 'seq' (sequential), 'div' (diverging), 'qual' (qualitative). `type`must be one of 'seq', 'div', 'qual'. Ignoring input, letting ggplot infer the type based on palette.")
+      type <- NULL
+    }
+    
+    if (isFALSE(fill)){
+      message("`fill = FALSE` -> `gordi_colour` works with `scale_colour_...()` functions.")
+    } else {
+      message("`fill = TRUE` -> `gordi_colour` works with `scale_fill_...()` functions.")
+    }
 
   
   #function that builds ggplot scale_colour object

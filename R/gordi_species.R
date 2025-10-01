@@ -127,31 +127,96 @@ gordi_species <- function(pass,
   map_colour <- !identical(colour, '') && has_name(spe_df, colour) 
   # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
   const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
-  # alpha
+ 
+  if(!identical(colour, '')){
+    message("To customize colours (similarly to `ggplot2::scale_colour_()` functions), please use gordi_colour() right after `gordi_species()`.")
+    if(!map_colour && !const_colour){
+      warning("`colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+      colour <- ''
+    }
+  }
+  
+   # alpha
   map_alpha <- !identical(alpha, '') && has_name(spe_df, alpha)
   const_alpha <- !map_alpha && is.numeric(alpha)
+  
+  if(!identical(alpha, '')){
+    if(!map_alpha && !const_alpha){
+      warning("`alpha` must be either a numeric constant (0-1) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      alpha <- ''
+    }
+  }
   
   ### arguments working only in geom_point
   # size
   map_size <- !identical(size, '') && has_name(spe_df, size)
   const_size <- !map_size && is.numeric(size)
+  
+  if(!identical(size, '')){
+    if(!map_size && !const_size){
+      warning("`size` must be either a numeric constant or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      size <- ''
+    }
+  }
+  
   # shape
   map_shape <- !identical(shape, '') && has_name(spe_df, shape)
   const_shape <- !map_shape && is.numeric(shape)
+  
+  if(!identical(shape, '')){
+    message("To customize shapes (similarly to `ggplot2::scale_shape_()` functions), please use gordi_shape() right after `gordi_species()`.")
+    if(!map_shape && !const_shape){
+      warning("`shape` must be either a numeric constant (0-25) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      shape <- ''
+    }
+  }
+  
   # fill
   map_fill <- !identical(fill, '') && has_name(spe_df, fill)
   const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())
-  # stroke
+ 
+  if(!identical(fill, '')){
+    message("To customize fill colours (similarly to `ggplot2::scale_fill_()` functions), please use gordi_colour() right after `gordi_species()`.")
+    if(!map_fill && !const_fill){
+      warning("`fill` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+      fill <- ''
+    }
+  }
+  
+   # stroke
   map_stroke <- !identical(stroke, '') && has_name(spe_df, stroke)
   const_stroke <- !map_stroke && is.numeric(stroke)
   
+  if(!identical(stroke, '')){
+    if(!map_stroke && !const_stroke){
+      warning("`stroke` must be either a numeric constant or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+      stroke <- ''
+    }
+  }
+  
   ### arguments working only in geom_segment
   # linetype
-  map_linetype <- !identical(linetype, '') && has_name(spe_df, linetype)
-  const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,''))
+  line_types <- c('solid', 'dashed', 'dotted', 'dotdash', 'longdash', 'twodash')
+  map_linetype <- !identical(linetype,'') && has_name(spe_df, linetype)
+  const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,'')) && linetype %in% line_types
+  
+  if(!identical(linetype, '')){
+    if(!map_linetype && !const_linetype){
+      warning("`linetype` must be either a numeric constant, a column name or a valid linetype (e.g. 'solid', 'dashed', 'dotted', 'dotdash', 'longdash', 'twodash'. Ignoring input, default is being used")
+      linetype <- ''
+    }
+  }
+  
   # linewidth
   map_linewidth <- !identical(linewidth, '') && has_name(spe_df, linewidth)
   const_linewidth <- !map_linewidth && is.numeric(linewidth)
+  
+  if(!identical(linewidth, '')){
+    if(!map_linewidth && !const_linewidth){
+      warning("`linewidth` must ve either a numeric constant or a numeric column. Ignoring input, default is being used.")
+      linewidth <- ''
+      }
+  }
   
   
   ### Prepare aes arguments for geom_point()
@@ -243,17 +308,21 @@ gordi_species <- function(pass,
 
   # 
   if (isTRUE(label)){
+    message("Labels have been drawn. To customize labels, please use `gordi_label()` right after `gordi_sites()`.")
     if (isTRUE(repel_label)){
       p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black') 
     } else {
       p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black')
     }
+  } else if(is.character(label)){
+    warning("`label` must be logical (TRUE/FALSE). To customize labels please use `gordi_label()` right after `gordi_sites()`. Ignoring `label` input, setting `label = FALSE`.")
+    label <- FALSE
   }
   
   
   # More scales possibility (e.g. one colour in sites and other in species)
   p <- p + ggnewscale::new_scale('size')
-  p <- p + ggnewscale::new_scale('shape')
+  #p <- p + ggnewscale::new_scale('shape')
   p <- p + ggnewscale::new_scale('alpha')
   p <- p + ggnewscale::new_scale('stroke')
   
@@ -265,3 +334,4 @@ gordi_species <- function(pass,
   # Return pass
   return(pass)
 }
+

@@ -80,7 +80,7 @@ gordi_read <- function(m,
     traits = traits,
     choices = choices,
     type = type,
-    axis_names = colnames(scores(m, display = 'sites')),
+    axis_names = colnames(scores(m, display = 'sites', choices = choices)),
     species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1],
     predictor_names = if (type %in% c('DCA', 'NMDS')) {NA} else {as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$biplot), rownames = 'predictor_names')[1]}
     )

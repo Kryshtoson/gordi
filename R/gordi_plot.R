@@ -36,9 +36,15 @@ gordi_plot <- function(pass,
                        device = NULL){
   p <- pass$plot
   
+  valid_devices <- c('png', 'pdf', 'jpeg', 'tiff', 'svg', 'bmp')
+  if (!is.null(device) && !device %in% valid_devices){
+    warning("Specified `device` is not valid (valid devices: png, pdf, jpeg, tiff, svg, bmp). Invalid input, using default device 'png'.")
+    device <- 'png'
+  }
+  
   if(!is.null(filename)){
     ggplot2::ggsave(filename = filename, plot = p, width = width, height = height, units = units, dpi = dpi, device = device)
-  if(isTRUE(customize)) message("Plot saved to", filename, "Returning ggplot object for further customization.")
+  if(isTRUE(customize)) message("Plot saved to `", filename, "` Returning ggplot object for further customization.")
   } else if (isTRUE(customize)){
     message("Returning ggplot object for customization. You can simply continue with `ggplot2` syntax -> `+ theme(...)`, etc.")
   }

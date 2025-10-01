@@ -194,7 +194,7 @@ gordi_sites <- function(pass,
     }
    
   p <- p + ggnewscale::new_scale("size") 
-  p <- p + ggnewscale::new_scale("shape")  
+  #p <- p + ggnewscale::new_scale("shape")  
   p <- p + ggnewscale::new_scale("alpha")
   p <- p + ggnewscale::new_scale("stroke") 
   
