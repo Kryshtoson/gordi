@@ -224,3 +224,4 @@ Even though `gordi` can do a lot of things, there are still many parts of the in
 -   displaying results of constrained ordination with interactions
 -   passively project predictors (like in `vegan::envfit()`)
 -   displaying 'spiders', 'hulls' and 'ellipses' when you want to symbolise clusters
+- ordisurf
