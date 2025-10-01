@@ -16,10 +16,10 @@
 #'   trait value in its dedicated column
 #' @param choices Numeric vector of selected ordination axes; defaults to the
 #'   first two axes
-#' @param scaling Scaling of species and site scores; see `?scores.cca` or
-#'   related functions
-#' @param correlation Logical; default = F, see `?scores.cca` or `?scores.rda` for details
-#' @param hill Logical; default = F, see `?scores.cca` for details
+#' @param scaling Scaling of species and site scores; see [vegan::scores.cca()]
+#' @param correlation Logical; default = FALSE, see [vegan::scores.cca()] or 
+#'   [vegan::scores.rda()] for details
+#' @param hill Logical; default = FALSE, see [vegan::scores.cca()] for details
 #' 
 #' 
 #' @return A list with elements:
@@ -39,6 +39,10 @@
 #'   }
 #' 
 #' @seealso [gordi_sites()], [gordi_read()], [gordi_predict()], [gordi_species()]
+#' 
+#' @importFrom vegan capscale rda cca decorana metaMDS scores eigenvals
+#' @importFrom tibble as_tibble
+#' @importFrom dplyr case_when
 #' 
 #' @examples
 #' library(vegan)
