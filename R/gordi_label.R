@@ -96,17 +96,11 @@ gordi_label <- function(pass,
   # if (is.null(pass$plot)) warning('No plot yet, draw it first!') 
   # p <- pass$plot
   
-  ### axis names used in spe_df 
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   
-  
-  ### ordination types -> later used in axis labels 
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
   {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
   
-  ### plot
-  # Creates blank plot if this function is used as the first one after gordi_read()
-  # or passes already existing plot
   
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
     p <- ggplot() +
