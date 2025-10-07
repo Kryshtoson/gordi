@@ -70,7 +70,7 @@
 #' o
 #' @export
 gordi_species <- function(pass,
-                          label = TRUE,
+                          label = FALSE,
                           symbol = c('default', 'point', 'arrow'),
                           colour = '',
                           size = '',

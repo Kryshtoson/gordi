@@ -58,7 +58,8 @@ gordi_read <- function(m,
                        choices = 1:2,
                        scaling = 'symm',
                        correlation = F,
-                       hill = F) {
+                       hill = F,
+                       const = 2) {
 
   # type of ordination 
   type <- case_when(
@@ -77,8 +78,8 @@ gordi_read <- function(m,
   pass <- list(
     m = m,
     explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {eigenvals(m) / m$tot.chi},
-    site_scores = as_tibble(as.data.frame(scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill))),
-    species_scores = as_tibble(as.data.frame(scores(m, display = 'species', scaling = scaling, choices = choices, correlation = correlation, hill = hill))),
+    site_scores = as_tibble(as.data.frame(scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
+    species_scores = as_tibble(as.data.frame(scores(m, display = 'species', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
     predictor_scores = scores(m, choices = choices, display = 'all', scaling = scaling, tidy = T) |> as_tibble() |> filter(score %in% c('biplot', 'centroids')),
     env = env,
     traits = traits,

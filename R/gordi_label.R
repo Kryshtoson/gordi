@@ -79,6 +79,7 @@ gordi_label <- function(pass,
                         shortcut_colour = '', #shortcut colour
                         shortcut_length = 3,
                         size = 3.9,
+                        alpha = '',
                         scaling_coefficient = 0.9,
                         nudge_x = 0,
                         nudge_y = 0,
@@ -100,7 +101,7 @@ gordi_label <- function(pass,
   
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
   {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
-  
+
   
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
     p <- ggplot() +
@@ -248,6 +249,16 @@ gordi_label <- function(pass,
       }
     }
     
+    map_alpha <- !identical(alpha, '') && has_name(spe_df, alpha)
+    const_alpha <- !map_alpha && is.numeric(alpha)
+    
+    if(!identical(alpha, '')){
+      if(!map_alpha && !const_alpha){
+        warning("`alpha` must be either a numeric constant (0-1) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+        alpha <- ''
+      }
+    }
+    
     if (map_shortcut_colour || map_label_colour){
       #if shortcut-colour or label_colour start a new colour scale
       col_var <- if (map_shortcut_colour) shortcut_colour else label_colour #col_var is shortcut_colour when map_shortcut_colour is true else its label_colour
@@ -259,6 +270,9 @@ gordi_label <- function(pass,
         label = sym(text_col),
         colour = sym(col_var)
       )
+      
+      if (map_alpha) aes_args$alpha <- sym(alpha)
+      
       mapping <- do.call(ggplot2::aes, aes_args)
       
       #mapping <- aes(Axis_spe1, Axis_spe2, label = !!sym(text_col), colour = !!sym(col_var))
@@ -280,8 +294,8 @@ gordi_label <- function(pass,
       )
       mapping <- do.call(ggplot2::aes, aes_args)
       
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
+      else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
       
     }
   }
@@ -316,6 +330,16 @@ gordi_label <- function(pass,
       }
     }
     
+    map_alpha <- !identical(alpha, '') && has_name(site_df, alpha)
+    const_alpha <- !map_alpha && is.numeric(alpha)
+    
+    if(!identical(alpha, '')){
+      if(!map_alpha && !const_alpha){
+        warning("`alpha` must be either a numeric constant (0-1) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+        alpha <- ''
+      }
+    }
+    
     if (map_label_colour){
       #new colour scale
       p <- p + ggnewscale::new_scale_colour()
@@ -326,6 +350,9 @@ gordi_label <- function(pass,
         label = sym(labcol),
         colour = sym(label_colour)
       )
+      
+      if (map_alpha) aes_args$alpha <- sym(alpha)
+      
       mapping <- do.call(ggplot2::aes, aes_args)
       
       # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
@@ -343,8 +370,8 @@ gordi_label <- function(pass,
       mapping <- do.call(ggplot2::aes, aes_args)
       
      # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol))
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
+      else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
     }
   }
   
@@ -380,16 +407,29 @@ gordi_label <- function(pass,
       }
     }
     
+    map_alpha <- !identical(alpha, '') && has_name(pred_df, alpha)
+    const_alpha <- !map_alpha && is.numeric(alpha)
+    
+    if(!identical(alpha, '')){
+      if(!map_alpha && !const_alpha){
+        warning("`alpha` must be either a numeric constant (0-1) or a numeric column in the `env` dataframe! Ignoring input, default is being used.")
+        alpha <- ''
+      }
+    }
+    
   
     if (map_label_colour){
       p <- p + ggnewscale::new_scale_colour()
       
       aes_args <- list(
-        x = quote(Axis_pred1),
-        y = quote(Axis_pred2),
+        x = quote(Axis_pred1*coef),
+        y = quote(Axis_pred2*coef),
         label = sym(labcol),
         colour = sym(label_colour)
       )
+      
+      if (map_alpha) aes_args$alpha <- sym(alpha)
+      
       mapping <- do.call(ggplot2::aes, aes_args)
       
       # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
@@ -400,16 +440,16 @@ gordi_label <- function(pass,
       col_const <- if (const_label_colour) label_colour else 'black'
       
       aes_args <- list(
-        x = quote(Axis_pred1),
-        y = quote(Axis_pred2),
+        x = quote(Axis_pred1*coef),
+        y = quote(Axis_pred2*coef),
         label = sym(labcol)
       )
       mapping <- do.call(ggplot2::aes, aes_args)
       
      # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol))
       if (isTRUE(repel_label))
-        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
+      else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
     }
   }
   

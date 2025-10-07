@@ -51,7 +51,7 @@
 #' 
 #' @export
 gordi_sites <- function(pass,
-                        label = TRUE,
+                        label = FALSE,
                         fill = '',
                         alpha = '',
                         stroke = '',
