@@ -1,3 +1,5 @@
+#'Changes point shapes
+#'
 #'@description
 #'The function [gordi_shape()] wraps ggplot functions: [ggplot2::scale_shape_manual()], [ggplot2::scale_shape_identity()] and [ggplot2::scale_shape_discrete()] to enable change of point shapes in the ggplot object stored in `pass$plot` (created by `gordi_*()` functions). After applying the function, it creates a new independent shape scale with `ggnewscale`, so later layer can have their own scale without any interference.
 #'
