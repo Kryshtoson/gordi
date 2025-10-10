@@ -1,3 +1,5 @@
+#' Passes object created by gordi to edits made by ggplot2 functions
+#' 
 #' @description
 #' The function [gordi_plot()] returns the ggplot object created by functions:[gordi_sites()] and/or [gordi_species()] after [gordi_read()].
 #' 
