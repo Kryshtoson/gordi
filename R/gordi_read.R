@@ -53,6 +53,7 @@
 #' o
 #' @export
 gordi_read <- function(m,
+                       spe = NULL,
                        env = NULL,
                        traits = NULL,
                        choices = 1:2,
@@ -62,7 +63,7 @@ gordi_read <- function(m,
                        const = 2) {
 
   # type of ordination 
-  type <- case_when(
+  type <- dplyr::case_when(
     inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA) ~ 'PCoA', #via capscale
     inherits(m, 'capscale') & !is.null(m$call$distance)                  ~ 'db-RDA',
     inherits(m, 'rda') & is.null(m$call$distance) & is.null(m$CCA)       ~ 'PCA',
@@ -77,17 +78,18 @@ gordi_read <- function(m,
   # create pass object 
   pass <- list(
     m = m,
-    explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {eigenvals(m) / m$tot.chi},
-    site_scores = as_tibble(as.data.frame(scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
-    species_scores = as_tibble(as.data.frame(scores(m, display = 'species', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
-    predictor_scores = scores(m, choices = choices, display = 'all', scaling = scaling, tidy = T) |> as_tibble() |> filter(score %in% c('biplot', 'centroids')),
+    explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+    site_scores = tibble::as_tibble(as.data.frame(vegan::scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
+    species_scores = tibble::as_tibble(as.data.frame(vegan::scores(m, display = 'species', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const))),
+    predictor_scores = vegan::scores(m, choices = choices, display = 'all', scaling = scaling, tidy = T) |> tibble::as_tibble() |> dplyr::filter(score %in% c('biplot', 'centroids')),
     env = env,
     traits = traits,
     choices = choices,
     type = type,
-    axis_names = colnames(scores(m, display = 'sites', choices = choices)),
-    species_names = as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1],
-    predictor_names = if (type %in% c('DCA', 'NMDS')) {NA} else {as_tibble(as.data.frame(scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$biplot), rownames = 'predictor_names')[1]}
+    axis_names = colnames(vegan::scores(m, display = 'sites', choices = choices)),
+    species_names = tibble::as_tibble(as.data.frame(vegan::scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$species), rownames = 'species_names')[1],
+    predictor_names = if (type %in% c('DCA', 'NMDS')) {NA} else {tibble::as_tibble(as.data.frame(vegan::scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill)$biplot), rownames = 'predictor_names')[1]},
+    spe = spe
     )
   
   # Return pass object
