@@ -6,7 +6,7 @@
 \usage{
 gordi_species(
   pass,
-  label = TRUE,
+  label = FALSE,
   symbol = c("default", "point", "arrow"),
   colour = "",
   size = "",

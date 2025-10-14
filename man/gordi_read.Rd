@@ -11,7 +11,8 @@ gordi_read(
   choices = 1:2,
   scaling = "symm",
   correlation = F,
-  hill = F
+  hill = F,
+  const = 2
 )
 }
 \arguments{
