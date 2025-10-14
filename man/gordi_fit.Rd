@@ -9,7 +9,6 @@ gordi_fit(
   slice_max = NULL,
   abs_frequency = NULL,
   relat_frequency = NULL,
-  display = c("sites", "lc"),
   choices = 1:2,
   summarize = T,
   permutations = 0
@@ -24,8 +23,6 @@ gordi_fit(
 
 \item{relat_frequency}{Numeric; calculates relative frequency and selects species with higher frequency than input value.}
 
-\item{display}{Character; either 'sites' for ordinary site scores and 'lc' for linear combination scores.}
-
 \item{choices}{Numeric vector of selected ordination axes, defaults to the first two axis.}
 
 \item{summarize}{Logical; show only the total value for each site/species, does not work though!}
@@ -33,6 +30,8 @@ gordi_fit(
 \item{permutations}{Number of permutations required.}
 
 \item{what}{Character; either 'species' or 'sites'.}
+
+\item{display}{Character; either 'sites' for ordinary site scores and 'lc' for linear combination scores.}
 }
 \value{
 The updated `pass` object with filtered species/site scores.
