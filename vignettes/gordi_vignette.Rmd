@@ -144,7 +144,7 @@ obj <- obj |>
 obj
 ```
 
-6.  Now, when you finally have all the points and arrows on its places, you may want to label the symbols and customize the labeling - and this is done with `gordi_label()` function which overrides labels displayed by `gordi_species()`, `gordi_sites()` or `gordi_predict()`. Its main advantage comes with **species** because there are many options for creating shortcuts. Unlike `gordi_colour()` and `gordi_shape()` functions, which must be used directly after what they should customize, this function may be used anytime. We suggest to cast it at the end of `gordi_` pipeline. 
+6.  Now, when you finally have all the points and arrows on its places, you may want to label the symbols and customize the labeling - and this is done with `gordi_label()` function which overrides labels displayed by `gordi_species()`, `gordi_sites()` or `gordi_predict()`. Its main advantage comes with **species** because there are many options for creating shortcuts. Unlike `gordi_colour()` and `gordi_shape()` functions, which must be used directly after what they should customize, this function may be used anytime. We suggest to cast it at the end of `gordi_` pipeline.
 
 ```{r}
 obj <- obj |> 
@@ -158,8 +158,8 @@ obj <- obj |>
 obj
 ```
 
-   For demonstrating the power of shortcuts, we need to update the species names in the dune dataset to full names...
-   
+For demonstrating the power of shortcuts, we need to update the species names in the dune dataset to full names...
+
 ```{r}
 # First we create provisional species names containing two words
 dune2 <- dune |> 
@@ -198,9 +198,9 @@ obj |>
 obj
 ```
 
-7. If you want to further customize the ordination plot with `theme()` functions, you need to do one more thing. After all `gordi_` functions you need to use `gordi_plot()` which extracts the ggplot object and makes it editable by standard `ggplot2` functions, e.g., `theme()`.
+7.  If you want to further customize the ordination plot with `theme()` functions, you need to do one more thing. After all `gordi_` functions you need to use `gordi_plot()` which extracts the ggplot object and makes it editable by standard `ggplot2` functions, e.g., `theme()`.
 
-> **Note**: Don't forget, that traditional **ggplot2** functions use the `+` sign, not pipe operator ` |> `.
+> **Note**: Don't forget, that traditional **ggplot2** functions use the `+` sign, not pipe operator `|>`.
 
 ```{r}
 # Nevim, proc tahle svina zas nefunguje
@@ -224,4 +224,4 @@ Even though `gordi` can do a lot of things, there are still many parts of the in
 -   displaying results of constrained ordination with interactions
 -   passively project predictors (like in `vegan::envfit()`)
 -   displaying 'spiders', 'hulls' and 'ellipses' when you want to symbolise clusters
-- ordisurf
+-   ordisurf
