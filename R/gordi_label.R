@@ -459,25 +459,3 @@ gordi_label <- function(pass,
   pass$plot <- p
   return(pass)
 }
-
-bind_cols(o$species_names, o$species_scores) -> spe_df
-
-str_split(spe_df[1], '\\s') -> parts_list
-
-rank_tokens <- c('sect\\.', 'Sect\\.', 'cf\\.', 'sect', 'Sect', 'cf', 'agg\\.', 'agg')
-rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
-parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
-# detect subspecies and take epithet after it
-rx_sub <- regex('^(subsp\\.|ssp\\.|subsp|ssp)$')
-has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
-# individual genus, species, subspecies
-genus <- map_chr(parts_list, 1)
-epithet <- map_chr(parts_list, 2)
-subsp <- vapply(parts_list, function (x) { i <- match(TRUE, str_detect(x, rx_sub))
-x[i + 1L]}, character(1))
-# shortcuts based on shortcut_length
-gN <- str_sub(genus, 1, 3)
-sN <- str_sub(epithet, 1, 3)
-subN <- str_sub(subsp, 1, 3)
-
-short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '.')
