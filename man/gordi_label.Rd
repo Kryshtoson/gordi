@@ -13,6 +13,7 @@ gordi_label(
   shortcut_colour = "",
   shortcut_length = 3,
   size = 3.9,
+  alpha = "",
   scaling_coefficient = 0.9,
   nudge_x = 0,
   nudge_y = 0,

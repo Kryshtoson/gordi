@@ -6,7 +6,7 @@
 \usage{
 gordi_sites(
   pass,
-  label = TRUE,
+  label = FALSE,
   fill = "",
   alpha = "",
   stroke = "",
