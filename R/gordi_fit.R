@@ -1,4 +1,4 @@
-#goodness of fit
+#'Filtering species scores based on goodness of fit/frequency.
 #' @description
 #' The function filters species or site scores, based on either goodness of fit or absolute/relative frequency. To filter scores based on goodness of fit, it uses either [goodness()] or [envfit()] function, chosen according to the ordination type. After the filtering, th efunction rewrites the scores object in the list, created by [gordi_read()].
 #' 
@@ -33,7 +33,6 @@
 #' @export
 
 gordi_fit <- function(pass,
-                      what = c('species', 'sites'),
                       slice_max = NULL,
                       abs_frequency = NULL,
                       relat_frequency = NULL,
@@ -44,16 +43,11 @@ gordi_fit <- function(pass,
 ){
   
   m <- pass$m
-  
-  what <- match.arg(what)
+
   display <- match.arg(display)
   
-  if (what == 'sites' && (!is.null(abs_frequency)||!is.null(relat_frequency))){
-    stop("Cannot calculate frequency of occurence for sites. For sites, only filtering based on goodness of fit is available. Please specify `slice_max` if you would like to filter based on goodness of fit.")
-  }
-  
-  if (!is.null(what)){
-    warning("If you want to filter based on goodness of fit, this function chooses between species and site scores.")
+  if (is.null(slice_max) && is.null(abs_frequency) && is.null(relat_frequency)){
+    stop("If you would like to filter based on goodness of fit/R², please specify `slice_max`. If you would like to filter based on frequency, either specify abs_frequency (absolute frequency) or relat_frequency (relative_frequency).")
   }
   
   pass$spe %>%
@@ -100,28 +94,19 @@ gordi_fit <- function(pass,
   
   if (!is.na(model)){
     warning("Using function `goodness()` to calculate goodness of fit.")
-    if (what == 'species' && !is.null(slice_max)){
+    if (!is.null(slice_max)){
     goodness_fit <- goodness(m, display = 'species', model = model, choices = choices, summarize = summarize)|>
       as_tibble()
     spe_fitted <- bind_cols(pass$species_names, goodness_fit, pass$species_scores)
-    } else if (what == 'sites' && !is.null(slice_max)){
-      goodness_fit <- goodness(m, display = 'sites', model = model, choices = choices, summarize = summarize)|>
-        as_tibble()
-      sites_fitted <- bind_cols(pass$env[1], goodness_fit, pass$site_scores)
-    
-    }
+    } 
   }
   
   if (inherits(m, 'capscale') || type == 'DCA'){
     warning("Using function `envfit()` to calculate goodness of fit (R²).")
-    if (what == 'species'){
+    if (!is.null(slice_max)){
       goodness_fit <- envfit(m, env = pass$spe, display = display, choices = choices, permutations = permutations)
       r <- goodness_fit$vectors$r |> as_tibble()
       spe_fitted <- bind_cols(pass$species_names, r, pass$species_scores)
-    } else if (what == 'sites'){
-      goodness_fit <- envfit(m, env = pass$env, display = display, choices = choices, permutations = permutations)
-      r <- goodness_fit$vectors$r|> as_tibble()
-      sites_fitted <- bind_cols(pass$env[1], r, pass$site_scores)
     }
   } 
   
