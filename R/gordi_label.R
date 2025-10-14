@@ -161,7 +161,7 @@ gordi_label <- function(pass,
       rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
       parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
       # detect subspecies and take epithet after it
-      rx_sub <- regex('^(subsp\\.?|ssp\\.?)$')
+      rx_sub <- regex('^(subsp\\.?|ssp\\.?|var\\.?)$')
       has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
       # individual genus, species, subspecies
       genus <- map_chr(parts_list, 1)
