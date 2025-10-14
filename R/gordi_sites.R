@@ -58,7 +58,7 @@ gordi_sites <- function(pass,
                         shape = '',
                         size = '',
                         colour = '',
-                        repel_label = T) {
+                        repel_label = F) {
   
   # axis names
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
