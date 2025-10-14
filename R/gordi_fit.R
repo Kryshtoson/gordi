@@ -84,7 +84,7 @@ gordi_fit <- function(pass,
     inherits(m, c('metaMDS', 'monoMDS'))                                                            ~ 'NMDS',
     TRUE ~ paste(class(m), collapse = '/') # writes just one output
   )
-  
+
   model <- case_when(
     type %in% c('CCA', 'RDA') ~ 'CCA',
     type %in% c('CA', 'PCA') ~ 'CA',
