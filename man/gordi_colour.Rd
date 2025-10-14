@@ -33,67 +33,73 @@ gordi_colour(
 )
 }
 \arguments{
-\item{pass}{A list object produced by [gordi_read()]}
+\item{pass}{A list object produced by \code{\link[gordi]{gordi_read}}}
 
-\item{scale}{Character; One of the `c('continuous', 'discrete','auto', 'binned')`.
-Character.}
+\item{scale}{Character; One of the scale types: \code{c('continuous', 'discrete', 'auto', 'binned')}.}
 
-\item{family}{Character; One of the palette families `c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')`.
-Character.}
+\item{family}{Character; One of the palette families: \code{c('viridis', 'brewer', 'gradient', 'steps', 'manual', 'default')}.}
 
-\item{fill}{Logical; If fill = FALSE operates on colour scale, if fill = TRUE operates on fill scale.
-Default is FALSE.}
+\item{fill}{Logical; If \code{FALSE} (default) operates on the colour aesthetic, if \code{TRUE} operates on the fill aesthetic.}
 
-\item{breaks}{Scale breaks. See `scale_colour_...` or `scale_fill_...`.}
+\item{breaks}{Scale breaks. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{name}{Scale name. See `scale_colour_...` or `scale_fill_...`.}
+\item{name}{Scale name. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{labels}{Labels for scale. See `scale_colour_...` or `scale_fill_...`.}
+\item{labels}{Labels for scale. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{limits}{Scale limits. See `scale_colour_...` or `scale_fill_...`.}
+\item{limits}{Scale limits. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{na.value}{Colour used for NA values.}
+\item{na.value}{Colour used for NA values. Default is \code{'grey50'}.}
 
-\item{guide}{Guide for the scale. See `scale_colour_...` or `scale_fill_...`.}
+\item{guide}{Guide for the scale. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{trans}{Transformation for the scale. See `scale_colour_...` or `scale_fill_...`.}
+\item{trans}{Transformation for the scale. See \code{scale_colour_...} or \code{scale_fill_...} documentation.}
 
-\item{values}{Vector of colours for `manual` discrete scale, and for continuous gradientn and stepsn variants.}
+\item{values}{Vector of colours for \code{manual} discrete scale, and for continuous \code{gradientn} and \code{stepsn} variants.}
 
-\item{option, }{direction, begin, end, alpha  Options for `viridis` scales.}
+\item{option, direction, begin, end, alpha}{Options for \code{viridis} scales.}
 
-\item{low, }{mid, midpoint, high Colours for `gradient`/`gradient2` or `steps`/`steps2` scales.}
+\item{low, mid, midpoint, high}{Colours for \code{gradient}/\code{gradient2} or \code{steps}/\code{steps2} scales.}
 
-\item{palette_name}{Arguments for `brewer` scales.}
+\item{palette_name, type}{Arguments for \code{brewer} scales. \code{palette_name} is the palette name (e.g., \code{'Set1'}).}
 
-\item{bins, }{n.breaks Arguments for `binned`/`steps` scales.}
+\item{bins, n.breaks}{Arguments for \code{binned}/\code{steps} scales. \code{bins} sets the number of bins for \code{brewer} binned scales (\code{fermenter}).}
 }
 \value{
-The updated `pass` object with label layers added to `pass$plot`. Followed by a fresh `ggnewscale` for the same aesthetic (colour or fill).
+The updated \code{pass} object with label layers added to \code{pass$plot}. Followed by a fresh \code{ggnewscale} for the same aesthetic (colour or fill).
 }
 \description{
-Adds a colour or fill scale to the current ggplot plot stored in `pass$plot` (created by gordi_*() functions). 
-After applying the colour scale, it starts a new independent scale using `ggnewscale`, 
+Adds a colour or fill scale to the current ggplot plot stored in \code{pass$plot} (created by \code{gordi_*()} functions). 
+After applying the colour scale, it starts a new independent scale using \code{ggnewscale}, 
 so later layers can have their own scale without any interference.
 }
 \details{
-use fill = FALSE to modify colour scales (default) and fill = TRUE to modify the fill scales
-Compulsory arguments:
-- `scale` selects the scale type: `continuous`, `discrete`, `binned` or `auto`. 
-With `scale = 'auto'`, the function chooses scale `discrete` when `values` are specified (e.g. manual palette), 
-otherwise `continuous`.
-- `family` selects the scale family within the scale type:
-for scale `discrete` -> `'manual'`, `'viridis'`, `'brewer'`, `'default'`
-for scale `continuous` ->  `'viridis'`, `'gradient'`, `'steps'`, `'brewer'`, `'default'`
-for scale `binned` -> `'viridis'`, `'brewer'`, `'steps'`, `'default'`
-For `scale = 'discrete'`, `family = 'manual'` you must provide `values` (vector of colours)
-Argument `na.values` sets colours for NA values in the dataset.
-After adding a certain scale, the function set a new colour/fill scale with `ggnewscale`, so subsequent layers can use a fresh scale.
+use \code{fill = FALSE} to modify colour scales (default) and \code{fill = TRUE} to modify the fill scales
+
+\strong{Compulsory arguments:}
+\itemize{
+  \item \code{scale} selects the scale type: \code{'continuous'}, \code{'discrete'}, \code{'binned'} or \code{'auto'}. 
+With \code{scale = 'auto'}, the function chooses scale \code{'discrete'} when \code{'values'} are specified (e.g. manual palette), 
+otherwise \code{'continuous'}.
+  \item \code{family} selects the scale family within the scale type:
+  \itemize{
+    \item For \code{scale = 'discrete'} -> \code{'manual'}, \code{'viridis'}, \code{'brewer'}, \code{'default'}
+    \item For \code{scale = 'continuous'} ->  \code{'viridis'}, \code{'gradient'}, \code{'steps'}, \code{'brewer'}, \code{'default'}
+    \item For \code{scale = 'binned'} -> \code{'viridis'}, \code{'brewer'}, \code{'steps'}, \code{'default'}
+  }
+}
+For \code{scale = 'discrete'} and \code{family = 'manual'} you must provide \code{values} (vector of colours)
+
+Argument \code{na.values} sets colours for NA values in the dataset.
+
+#' After adding a certain scale, the function sets a new colour/fill scale with \code{ggnewscale::new_scale_colour()} or
+\code{ggnewscale::new_scale_fill()}, so subsequent layers can use a fresh scale.
 
 Call [gordi_colour()] right after you have added a layer that maps colour/fill (e.g. `gordi_species(colour = ...)`, `gordi_sites(fill = ...)`).
 If no layer uses colour/fill aesthetic, this function has no effect.
 }
 \examples{
+\dontrun{
 # discrete species colours with a brewer palette
 gordi_read(m, env, traits) |>
   gordi_species(colour = 'form') |>
@@ -103,4 +109,5 @@ gordi_read(m, env, traits) |>
 gordi_read(m, env) |>
   gordi_sites(fill = 'elevation') |>
   gordi_colour(fill = TRUE, scale = 'continuous', family = 'viridis')
+}
 }

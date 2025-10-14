@@ -6,6 +6,7 @@
 \usage{
 gordi_read(
   m,
+  spe = NULL,
   env = NULL,
   traits = NULL,
   choices = 1:2,
