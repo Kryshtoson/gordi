@@ -84,7 +84,12 @@ gordi_sites <- function(pass,
   p <- p + ggnewscale::new_scale_colour()
   p <- p + ggnewscale::new_scale_fill()
   
+  if (!is.null(pass$env)){
   site_df <- bind_cols(pass$env, pass$site_scores)
+  } else {
+    site_df <- pass$site_scores|>
+            rownames_to_column(var = 'id')
+    }
   
   # Detect mapped vs constant aesthetics
   map_colour <- !identical(colour, '') && has_name(site_df, colour)
@@ -188,6 +193,10 @@ gordi_sites <- function(pass,
   # plot  
   p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
  
+  if (isTRUE(label) && is.null(pass$env)){
+    warning("`env` data is not provided. Drawing default labels for sites (row numbers). If you want to use other site labels, please specify 'env' in `gordi_read` (e.g. gordi_read(env = env)), eventually combined with `gordi_label`.")
+  }
+  
   if (isTRUE(label)){
     message("Labels have been drawn. To customize labels, please use `gordi_label()` right after `gordi_sites()`.")
     labcol <- names(site_df)[1]
@@ -210,4 +219,3 @@ gordi_sites <- function(pass,
   
   return(pass)
 }
-
