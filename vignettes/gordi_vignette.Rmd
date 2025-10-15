@@ -1,5 +1,5 @@
 ---
-title: "gordi_vignette"
+title: "gordi"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{gordi_vignette}
@@ -19,11 +19,11 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-#library(gordi)
+remotes::install_github('Kryshtoson/gordi')
+library(gordi)
 library(tidyverse)
 library(vegan)
 library(ggrepel)
-devtools::load_all()
 ```
 
 # Introduction
@@ -53,7 +53,7 @@ With `gordi`, you can:
 Example:
 
 ```{r}
-#library(gordi)
+library(gordi)
 
 # Load example dataset
 data(dune)
@@ -203,17 +203,24 @@ obj
 > **Note**: Don't forget, that traditional **ggplot2** functions use the `+` sign, not pipe operator `|>`.
 
 ```{r}
-# Nevim, proc tahle svina zas nefunguje
+library(see)
+obj <- capscale(sqrt(dune) ~ A1, data = dune.env, distance = 'bray', sqrt.dist = T)
 
-# obj |> 
-#   gordi_plot() +
-#   theme_dark() +
-#   labs(title = 'This is a very nice plot',
-#        subtitle = 'Do not try to argue with the authors, it is a nicely elaborated plot') +
-#   theme(legend.position = 'bottom',
-#         plot.title = element_text(colour = 'red'),
-#         plot.subtitle = element_text(face = 'italic'),
-#         axis.title = element_text(family = 'serif', colour = 'lightblue4')) 
+obj |>
+   gordi_read(env = dune.env,
+             choices = 1:2,
+             scaling = 'species',
+             correlation = T) |> 
+  gordi_species() |> 
+  gordi_predict() |> 
+  gordi_label(what = 'species',
+              label_colour = 'white',
+              repel_label = T) |>  
+  gordi_plot() +
+  theme_abyss() +
+  labs(title = 'This is a very nice plot',
+       subtitle = 'Do not try to argue with the authors.') +
+  geom_point(aes(x = -0.12, y = 0.15), shape = 8, size = 10, colour = 'pink', stroke = 3)
 ```
 
 ## Limitations
