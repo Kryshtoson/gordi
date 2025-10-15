@@ -13,7 +13,7 @@ gordi_sites(
   shape = "",
   size = "",
   colour = "",
-  repel_label = T
+  repel_label = F
 )
 }
 \arguments{

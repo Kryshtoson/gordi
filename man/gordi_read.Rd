@@ -6,25 +6,27 @@
 \usage{
 gordi_read(
   m,
-  spe = NULL,
   env = NULL,
+  spe = NULL,
   traits = NULL,
   choices = 1:2,
   scaling = "symm",
   correlation = F,
   hill = F,
-  const = c(2, 2)
+  const = c(2, 2),
+  species_score_type = c("lc", "wa")
 )
 }
 \arguments{
 \item{m}{An ordination result: object of class \code{rda}, \code{cca}, \code{capscale},
 \code{decorana}, or \code{metaMDS}.}
 
-\item{spe}{A data frame of species abundances or community data. This is stored
-in the output list but not used internally by `gordi_read`. Defaults to \code{NULL}.}
-
 \item{env}{A data frame with environmental variables of samples; must have
 the same number of samples (rows) as the species table. Defaults to \code{NULL}.}
+
+\item{spe}{A data frame of species abundances or community data. This is crucial
+if the ordination (\code{capscale} or \code{metaMDS}) was calculated on a 
+distance matrix and you require species scores. Defaults to \code{NULL}.}
 
 \item{traits}{A data frame of species traits; one species can have only one
 trait value in its dedicated column. Defaults to \code{NULL}.}
@@ -45,6 +47,12 @@ for details.}
 
 \item{const}{Numeric vector of length 1 or 2. Scaling constant(s) for sites and species
 when the method is not CA/CCA/RDA. Passed to \code{\link[vegan]{scores}}. Defaults to \code{c(2, 2)}.}
+
+\item{species_score_type}{Character string specifying the type of species scores 
+to calculate for distance-based ordinations (db-RDA/PCoA/NMDS) when species 
+data is supplied via \code{spe}. Must be one of \code{'lc'} (linear combination, default) or 
+\code{'wa'} (weighted average). LC scores are calculated via \code{envfit} and 
+WA scores via \code{wascores}. Note: WA scores are not supported for PCoA yet.}
 }
 \value{
 A list with elements:
@@ -64,17 +72,23 @@ A list with elements:
   }
 }
 \description{
-`gordi_read` is the first function in the family of `gordi_`functions. 
-It takes the output of `rda`, `cca`, `capscale`, `decorana` and `metaMDS` and 
-translates in into a format usable by other `gordi_` functions. `gordi_read` 
-was not tested for partial ordination (with `Condition()`) yet, and axis labels
-are the default ones from vegan.
+\code{gordi_read()} is the first function in the family of \code{gordi_} functions. 
+It takes the output of \code{rda}, \code{cca}, \code{capscale}, \code{decorana} and \code{metaMDS} and 
+translates in into a format usable by other \code{gordi_} functions. It can also read ordination objects
+which were calculated on dissimilarity matrices.
 }
 \details{
 The function uses several arguments passed directly to \code{\link[vegan]{scores}}
-to retrieve species, site, and predictor scores. The automatic classification
+to retrieve species, sites and predictors scores. The automatic classification
 of the ordination type (`type` element in the returned list) is based on the
 class and arguments used in the original \code{vegan} call.
+
+\strong{Handling Distance-Based Ordinations (PCoA, db-RDA, NMDS):}
+For ordinations calculated directly on a distance matrix (like PCoA or NMDS), 
+species scores cannot be calculated internally by \code{vegan}. But you supply
+the \strong{original species data} to the \code{spe} argument, \code{gordi_read}
+will calculate species scores using an appropriate method (\code{envfit} for
+LC scores, or \code{wascores} for WA scores) based on the \code{species_score_type} argument.
 
 This function was not tested for partial ordination (with \code{Condition()}) yet,
 and axis labels are the default ones from \code{vegan}.

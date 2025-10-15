@@ -7,7 +7,7 @@
 #' for the last category. It also can't display explanatory variables passively.
 #' 
 #' There will be a special function for this once, maybe something as
-#' `gordi_passive_agressive()`. Similarly to [gordi_species()] and [gordi_sites()],
+#' `gordi_corr()`. Similarly to [gordi_species()] and [gordi_sites()],
 #' you can also set a wide range of graphing parameters, such as colour, fill, size,
 #' shape, alpha, stroke, and more traditional ggplot arguments, which can read
 #' both, static and dynamic variable (e.g., 'red' or 'elevation').

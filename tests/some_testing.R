@@ -2,7 +2,6 @@ remotes::install_github('Kryshtoson/gordi')
 library(gordi)
 library(tidyverse)
 library(vegan)
-library(rlang)
 
 devtools::document()
 
@@ -67,6 +66,10 @@ sco |>
   janitor::clean_names(label)
 
 
+
+
+
+
 m <- cca(dune ~ Use + Management, data = dune.env)
 
 
@@ -94,5 +97,117 @@ m$CCA$centroids |>
   as_tibble(rownames = 'factor')
 
 devtools::load_all()
+
+
+# matrix instead spe
+data(dune)
+data(dune.env)
+
+dune.dist <- vegdist(sqrt(dune), method = 'hell')
+
+m <- capscale(dune.dist ~ A1 + Use, dune.env)
+m <- capscale(dune.dist ~ 1)
+m <- rda(dune.dist ~ 1) # nope
+m <- cca(dune.dist ~ 1) # nope
+m <- decorana(dune.dist) # je to blbost, nema se to tak vubec pocitat
+m <- decorana(dune)
+m1 <- metaMDS(dune.dist, k = 3)
+m2 <- metaMDS(dune, k = 3)
+
+# db-RDA, weighted averages (min preferovana moznost)
+wascores(scores(m, display = 'lc'), dune)
+# db-RDA, 'lc' scores = korelace druhu s LC scores samplu
+envfit(m, env = dune, display = 'lc')
+
+# PCoA, 'lc' = linearni korelace, sipky ('lc')
+envfit(m, env = dune, display = 'sites')
+# PCoA wa zatim nedelame, ale mozna to neni blbost
+#...
+
+# NMDS - wa scores = druhova optima ('lc' nemaji smysl)
+wa_m1 <- wascores(scores(m1, display = 'si'), dune, expand = T)
+
+
+# 
+# sco.m1 <- wa_m1 |> 
+#   as.data.frame() |> 
+#   as_tibble() |> 
+#   select(NMDS1)
+# 
+# sco.m2 <- scores(m2, display = 'species') |> 
+#   as_tibble() |> 
+#   select(NMDS1)
+# 
+# cor.test(sco.m1 |> pull(), sco.m2 |> pull())
+
+
+
+scores(m, tidy = T) |> 
+  as_tibble() |> 
+  filter(score == 'species') |> 
+  summarise(
+    # TRUE if there is *any* row where *all* of the first two columns are NA
+    has_all_NA_in_first_two = any(if_all(1:2, is.na))
+  ) |>
+  pull()
+
+
+spe_scores_and_names <- envfit(m, env = dune, permutations = 0) |> 
+  scores(display = 'vectors', choices = 1:2) |> 
+  as_tibble(rownames = 'species')
+
+spe_names <- spe_scores_and_names |> select(species)  
+spe_scores <- spe_scores_and_names |> select(-species)  
+
+
+species_scores = tibble::as_tibble(as.data.frame(vegan::scores(m, display = 'species', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const)))
+
+envfit(m, env = spe, permutations = 0) |> 
+  scores(display = 'vectors', choices = choices) |> 
+  as_tibble(rownames = 'species')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+m <- rda(dune ~ 1)
+m <- rda(dune ~ A1 + Use, dune.env)
+m <- cca(dune ~ 1)
+m <- cca(dune ~ A1 + Use, dune.env)
+m <- decorana(dune)
+m <- capscale(dune ~ 1)
+m <- capscale(dune ~ A1 + Use, dune.env)
+m <- metaMDS(dune, k = 4)
+
+
+dbrda_spe_scores_lc <- envfit(m, env = dune, display = 'lc', choices = 1:4, scaling = 'sym', correlation = T, hill = T) |> 
+  scores(display = 'vectors') |> 
+  as_tibble(rownames = 'label') 
+
+
+scores(m, display = 'sites', scaling = 'sym', choices = 1:4, correlation = T, hill = F, const = c(1,2), tidy = T) |> as_tibble() 
+  
+  #filter(score %in% c('biplot', 'centroids'))
+
+# species_scores and species_names
+as_tibble(as.data.frame(scores(m, display = 'species', scaling = 'species', choices = 1:4, correlation = T, hill = T, const = c(1,2))), rownames = 'species_names')
+
+# site_scores
+as_tibble(as.data.frame(scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const)))
+
+# axis names
+colnames(scores(m, display = 'sites', choices = 1:4))
 
 

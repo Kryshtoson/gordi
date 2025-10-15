@@ -116,10 +116,10 @@ gordi_read <- function(m,
     TRUE ~ paste(class(m), collapse = '/') # writes just one output
   )
   
-  
+
   # force 'lc' as default when NA is provided
   species_score_type <- match.arg(species_score_type)
-  
+
   # --- create empty pass object ---
   pass <- NULL
   
@@ -179,19 +179,19 @@ gordi_read <- function(m,
                  env = env,
                  spe = spe,
                  traits = traits)
-    
-    # 2. PCoA, db-RDA                 
+  
+  # 2. PCoA, db-RDA                 
   } else if (type %in% c('PCoA', 'db-RDA')) {
     
     # Core Site Scores (Required in all branches)
     si_scores <- scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'sites') |> select(-c(score))
     
-    # 3.1 If PCoA or db-RDA were calculated on species table, continue and create pass object.
+  # 3.1 If PCoA or db-RDA were calculated on species table, continue and create pass object.
     if (isFALSE(all(is.na(vegan::scores(m, display = "species"))))) {
       
       # Species scores extraction
       spe_scores <- scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'species') |> select(-c(score))
-      
+
       pass <- list(
         m = m,
         type = type,
@@ -207,11 +207,11 @@ gordi_read <- function(m,
         spe = spe,
         traits = traits
       )
-      
-      # 3.2 If PCoA or db-RDA were calculated on distance matrix, check is spe table was supplied.       
+  
+  # 3.2 If PCoA or db-RDA were calculated on distance matrix, check is spe table was supplied.       
     } else if (isTRUE(all(is.na(scores(m, display = "species"))))) {
       
-      # 3.2.1 If spe table was not supplied, warn the user that pass will include just site scores, but species scores will be empty.
+  # 3.2.1 If spe table was not supplied, warn the user that pass will include just site scores, but species scores will be empty.
       if (is.null(spe)) {
         
         warning(paste0('The ', type, ' was calculated on distance matrix, but you didn\'t supply the species data into the argument `spe`. Species scores were not calculated, but only site scores are available.'))
@@ -232,128 +232,128 @@ gordi_read <- function(m,
           traits = traits
         )
         
-        # 3.2.2 If spe table was supplied, check, if it is db-RDA or PCoA    
-      } else {
-        
-        # 3.2.2.1 For db-RDA, there are two options - lc and wa species scores. LC are the default.      
-        if(type == 'db-RDA') {
-          
-          # 3.2.2.1.1 If species_score_type was defined as lc (or was not defined) calculate lc scores and create pass object.                    
-          if(species_score_type == 'lc') {
+  # 3.2.2 If spe table was supplied, check, if it is db-RDA or PCoA    
+        } else {
+  
+  # 3.2.2.1 For db-RDA, there are two options - lc and wa species scores. LC are the default.      
+          if(type == 'db-RDA') {
+  
+  # 3.2.2.1.1 If species_score_type was defined as lc (or was not defined) calculate lc scores and create pass object.                    
+            if(species_score_type == 'lc') {
+              
+              dbrda_spe_scores_lc <- envfit(m, env = spe, display = 'lc', choices = choices) |> 
+                scores(display = 'vectors') |> 
+                as_tibble(rownames = 'species_names') 
+              
+              pass <- list(
+                m = m,
+                type = type,
+                explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+                choices = choices,
+                axis_names = colnames(scores(m, display = 'sites', choices = choices)),
+                site_scores = si_scores |> dplyr::select(-label),
+                species_scores = dbrda_spe_scores_lc |> select(-species_names),
+                predictor_scores = pred_scores,
+                species_names =  dbrda_spe_scores_lc |> select(species_names),
+                predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
+                env = env,
+                spe = spe,
+                traits = traits
+              )
+              
+              warning(paste0('For this ',  type, ' `lc` scores of species were calculated.'))
+
+  # 3.2.2.1.2 If species_score_type was defined as wa calculate wa scores and create pass object.                
+            } else if (species_score_type == 'wa') {
+              
+              dbrda_spe_scores_wa <- wascores(scores(m, display = 'lc', choices = choices), spe) |> 
+                as_tibble(rownames = 'species_names') 
+              
+              pass <- list(
+                m = m,
+                type = type,
+                explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+                choices = choices,
+                axis_names = colnames(scores(m, display = 'sites', choices = choices)),
+                site_scores = si_scores |> dplyr::select(-label),
+                species_scores = dbrda_spe_scores_wa |> select(-species_names),
+                predictor_scores = pred_scores,
+                species_names = dbrda_spe_scores_wa |> select(species_names),
+                predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
+                env = env,
+                spe = spe,
+                traits = traits
+              )
+              
+              warning(paste0('For this ',  type, ' `wa` scores of species were calculated.'))
+              
+            }
             
-            dbrda_spe_scores_lc <- envfit(m, env = spe, display = 'lc', choices = choices) |> 
-              scores(display = 'vectors') |> 
-              as_tibble(rownames = 'species_names') 
+  # 3.2.2.2 For PCoA, there are theoretically also two options - lc and wa, but currently, only lc scores will be calculated.          
+          } else if(type == 'PCoA') {
+    
+  # 3.2.2.2.1 If species_score_type was defined as lc (or was not defined) calculate lc scores and create pass object.                  
+            if(species_score_type == 'lc') {
+              
+              pcoa_spe_scores_lc <- envfit(m, env = spe, display = 'sites', choices = choices) |> 
+                scores(display = 'vectors') |> 
+                as_tibble(rownames = 'species_names') 
+              
+              pass <- list(
+                m = m,
+                type = type,
+                explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+                choices = choices,
+                axis_names = colnames(scores(m, display = 'sites', choices = choices)),
+                site_scores = si_scores |> dplyr::select(-label),
+                species_scores = pcoa_spe_scores_lc |> select(-species_names),
+                predictor_scores = pred_scores,
+                species_names = pcoa_spe_scores_lc |> select(species_names),
+                predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
+                env = env,
+                spe = spe,
+                traits = traits
+              )
+              
+              warning(paste0('For this ',  type, ' `lc` scores of species were calculated.'))
+              
+  # 3.2.2.2.1 If species_score_type was defined as wa, don't calculate species scores and create pass object without them.            
+            } else if (species_score_type == 'wa') {
             
-            pass <- list(
-              m = m,
-              type = type,
-              explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
-              choices = choices,
-              axis_names = colnames(scores(m, display = 'sites', choices = choices)),
-              site_scores = si_scores |> dplyr::select(-label),
-              species_scores = dbrda_spe_scores_lc |> select(-species_names),
-              predictor_scores = pred_scores,
-              species_names =  dbrda_spe_scores_lc |> select(species_names),
-              predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
-              env = env,
-              spe = spe,
-              traits = traits
-            )
-            
-            warning(paste0('For this ',  type, ' `lc` scores of species were calculated.'))
-            
-            # 3.2.2.1.2 If species_score_type was defined as wa calculate wa scores and create pass object.                
-          } else if (species_score_type == 'wa') {
-            
-            dbrda_spe_scores_wa <- wascores(scores(m, display = 'lc', choices = choices), spe) |> 
-              as_tibble(rownames = 'species_names') 
-            
-            pass <- list(
-              m = m,
-              type = type,
-              explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
-              choices = choices,
-              axis_names = colnames(scores(m, display = 'sites', choices = choices)),
-              site_scores = si_scores |> dplyr::select(-label),
-              species_scores = dbrda_spe_scores_wa |> select(-species_names),
-              predictor_scores = pred_scores,
-              species_names = dbrda_spe_scores_wa |> select(species_names),
-              predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
-              env = env,
-              spe = spe,
-              traits = traits
-            )
-            
-            warning(paste0('For this ',  type, ' `wa` scores of species were calculated.'))
-            
+              warning('WA (weighted average) scores for species are not available for PCoA calculated on distance matrix yet. The discussion about their application is still going on, so they may be available in the future. At this moment, species scores were not calculated.')  
+              
+              pass <- list(
+                m = m,
+                type = type,
+                explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+                choices = choices,
+                axis_names = colnames(scores(m, display = 'sites', choices = choices)),
+                site_scores = si_scores |> dplyr::select(-label),
+                species_scores = NULL,
+                predictor_scores = pred_scores,
+                species_names = NULL,
+                predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
+                env = env,
+                spe = spe,
+                traits = traits
+              )
+              
+            }
           }
-          
-          # 3.2.2.2 For PCoA, there are theoretically also two options - lc and wa, but currently, only lc scores will be calculated.          
-        } else if(type == 'PCoA') {
-          
-          # 3.2.2.2.1 If species_score_type was defined as lc (or was not defined) calculate lc scores and create pass object.                  
-          if(species_score_type == 'lc') {
-            
-            pcoa_spe_scores_lc <- envfit(m, env = spe, display = 'sites', choices = choices) |> 
-              scores(display = 'vectors') |> 
-              as_tibble(rownames = 'species_names') 
-            
-            pass <- list(
-              m = m,
-              type = type,
-              explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
-              choices = choices,
-              axis_names = colnames(scores(m, display = 'sites', choices = choices)),
-              site_scores = si_scores |> dplyr::select(-label),
-              species_scores = pcoa_spe_scores_lc |> select(-species_names),
-              predictor_scores = pred_scores,
-              species_names = pcoa_spe_scores_lc |> select(species_names),
-              predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
-              env = env,
-              spe = spe,
-              traits = traits
-            )
-            
-            warning(paste0('For this ',  type, ' `lc` scores of species were calculated.'))
-            
-            # 3.2.2.2.1 If species_score_type was defined as wa, don't calculate species scores and create pass object without them.            
-          } else if (species_score_type == 'wa') {
-            
-            warning('WA (weighted average) scores for species are not available for PCoA calculated on distance matrix yet. The discussion about their application is still going on, so they may be available in the future. At this moment, species scores were not calculated.')  
-            
-            pass <- list(
-              m = m,
-              type = type,
-              explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
-              choices = choices,
-              axis_names = colnames(scores(m, display = 'sites', choices = choices)),
-              site_scores = si_scores |> dplyr::select(-label),
-              species_scores = NULL,
-              predictor_scores = pred_scores,
-              species_names = NULL,
-              predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
-              env = env,
-              spe = spe,
-              traits = traits
-            )
-            
-          }
-        }
       }
     }
-    
-    # 4. NMDS  
+  
+  # 4. NMDS  
   } else if (type == 'NMDS') {
     
     # core site scores (required in all branches)
     si_scores <- scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'sites') |> dplyr::select(-score)
     
-    # 4.1 If species scores exist in m, create pass object
+  # 4.1 If species scores exist in m, create pass object
     if(!is.null(scores(m, display = 'species', tidy = T))) {
-      
+    
       spe_scores <- scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'species') |> dplyr::select(-score)
-      
+
       pass <- list(
         m = m,
         type = type,
@@ -369,13 +369,13 @@ gordi_read <- function(m,
         spe = spe,
         traits = traits
       ) 
-      
-      # 4.2 If species scores does not exist, calculate wa scores and create pass object.      
+     
+  # 4.2 If species scores does not exist, calculate wa scores and create pass object.      
     } else if (is.null(scores(m, display = 'species', tidy = T))) {
       
-      # 4.2.1 If spe table was not supplied, warn the user that pass will include just site scores and species scores will be empty. 
+  # 4.2.1 If spe table was not supplied, warn the user that pass will include just site scores and species scores will be empty. 
       if(is.null(spe)) {
-        
+       
         warning(paste0('The ', type, ' was calculated on distance matrix, but you didn\'t supply the species data into the argument `spe`. Species scores were not calculated, but site scores are available.'))
         
         pass <- list(
@@ -395,36 +395,169 @@ gordi_read <- function(m,
         ) 
       } else
         
-        # 4.3. If spe table was supplied, calculate wa species scores      
-        if (!is.null(spe)) {
-          
-          nmds_spe_scores_wa <- wascores(scores(m, display = 'si', choices = choices), spe, expand = T) |> 
-            as.data.frame() |> 
-            as_tibble(rownames = 'species_names')
-          
-          pass <- list(
-            m = m,
-            type = type,
-            explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
-            choices = choices,
-            axis_names = colnames(vegan::scores(m, display = 'sites', choices = choices)),
-            site_scores = si_scores |> dplyr::select(-label),
-            species_scores = nmds_spe_scores_wa |> select(-species_names),
-            predictor_scores = pred_scores,
-            species_names = nmds_spe_scores_wa |> select(species_names),
-            predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
-            env = env,
-            spe = spe,
-            traits = traits
-          )  
-          
-          warning(paste0('For this ',  type, ' `wa` scores of species were calculated. `lc` are not an option for this type of ordination.'))
-          
-        }
+  # 4.3. If spe table was supplied, calculate wa species scores      
+      if (!is.null(spe)) {
+        
+      nmds_spe_scores_wa <- wascores(scores(m, display = 'si', choices = choices), spe, expand = T) |> 
+        as.data.frame() |> 
+        as_tibble(rownames = 'species_names')
+
+      pass <- list(
+        m = m,
+        type = type,
+        explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
+        choices = choices,
+        axis_names = colnames(vegan::scores(m, display = 'sites', choices = choices)),
+        site_scores = si_scores |> dplyr::select(-label),
+        species_scores = nmds_spe_scores_wa |> select(-species_names),
+        predictor_scores = pred_scores,
+        species_names = nmds_spe_scores_wa |> select(species_names),
+        predictor_names = if (!is.null(pred_scores)) {pred_scores |> dplyr::select(predictor_names = label)} else {NULL},
+        env = env,
+        spe = spe,
+        traits = traits
+      )  
+     
+      warning(paste0('For this ',  type, ' `wa` scores of species were calculated. `lc` are not an option for this type of ordination.'))
+       
     }
+  }
   }
   
   # Return pass object
   return(pass)
   
 }
+
+
+
+
+# Testing -----------------------------------------------------------------
+
+
+data(dune)
+data(dune.env)
+
+dune.dist <- vegdist(dune, method = 'eucli')
+
+m <- rda(dune ~ 1)
+m <- rda(dune ~ A1, dune.env)
+m <- cca(dune ~ 1, dune.env)
+m <- cca(dune ~ A1, dune.env)
+m <- decorana(dune)
+m <- decorana(dune.dist)
+m <- capscale(dune ~ 1)
+m <- capscale(dune.dist ~ 1)
+m <- capscale(dune ~ A1, dune.env)
+m <- capscale(dune.dist ~ A1, dune.env)
+m <- metaMDS(dune, k = 3)
+m <- metaMDS(dune.dist, k = 3)
+
+
+gordi_read(m)
+gordi_read2(m, spe = dune, env = as_tibble(dune.env, rownames = 'ID'), species_score_type = 'lc') |> 
+  gordi_sites() |> 
+  gordi_species() |> 
+  gordi_corr(variables = c('A1', 'Use', 'Management'), permutations = 999, p_val_adjust = T, p_val_adjust_method = 'holm', colour = 'name') |> 
+  gordi_label(what = 'sites', repel_label = T)
+
+scores(m, scaling = 'species', choices = 1:4, correlation = T, hill = F, const = c(1,1), tidy = T) |> as_tibble()
+
+
+
+scores(m, tidy = T)
+
+as_tibble(as.data.frame(scores(m, display = 'species', scaling = 'species', choices = 1:2,
+                               correlation = T, hill = T, const = c(1,2))))
+
+envfit(m, env = dune, display = 'sites', choices = 1:2, correlation = T, hill = T) |> 
+  scores(display = 'vectors')
+
+
+
+tibble::as_tibble(scores(m, scaling = 'sym', display = 'species',choices = 1:2, correlation = T, hill = F), rownames = 'species_names') |> select(species_names)
+
+inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA)
+
+class(m)
+
+as_tibble(NULL)
+
+
+m <- capscale(dune.dist ~ A1 + Use, dune.env)
+m <- capscale(dune.dist ~ 1)
+m <- rda(dune.dist ~ 1) # nope
+m <- cca(dune.dist ~ 1) # nope
+m <- decorana(dune.dist) # je to blbost, nema se to tak vubec pocitat
+m <- decorana(dune)
+m1 <- metaMDS(dune.dist, k = 3)
+m2 <- metaMDS(dune, k = 3)
+
+# db-RDA, weighted averages (min preferovana moznost)
+wascores(scores(m, display = 'lc'), dune)
+
+wascores(scores(m, display = 'lc'), dune) |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(-species_names)
+
+wascores(scores(m, display = 'lc'), dune) |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(species_names)
+
+# db-RDA, 'lc' scores = korelace druhu s LC scores samplu
+envfit(m, env = dune, display = 'lc') 
+
+envfit(m, env = dune, display = 'lc') |> 
+  scores(display = 'vectors') |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(-species_names)
+
+envfit(m, env = dune, display = 'lc') |> 
+  scores(display = 'vectors') |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(species_names)
+
+
+
+# PCoA wa zatim nedelame, ale mozna to neni blbost
+#...
+# PCoA, 'lc' = linearni korelace, sipky ('lc')
+envfit(m, env = dune, display = 'sites')
+
+envfit(m, env = dune, display = 'sites') |> 
+  scores(display = 'vectors') |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(-species_names)
+
+envfit(m, env = dune, display = 'sites') |> 
+  scores(display = 'vectors') |> 
+  as_tibble(rownames = 'species_names') |> 
+  select(species_names)
+
+# NMDS - wa scores = druhova optima ('lc' nemaji smysl)
+wa_m1 <- wascores(scores(m1, display = 'si'), dune, expand = T)
+
+wascores(scores(m1, display = 'si', choices = 1:2), dune, expand = T) |> 
+  as.data.frame() |> 
+  as_tibble(rownames = 'species_names')
+
+is.null(scores(m2, display = 'species', tidy = T))
+
+
+
+# PCA, RDA, CA, CCA
+scores(rda(dune ~ 1), display = 'species') |> 
+  as.data.frame() |> 
+  summarise(sum1 = sum(PC1),
+            sum2 = sum(PC2))
+
+scores(m, tidy = T) |> 
+  as_tibble() 
+
+all.equal(
+  rownames(vegan::scores(m, display = "sites")),
+  rownames(vegan::scores(m, display = "species")))
+
+m <- capscale(dune.dist ~ 1) 
+
+all(is.na(vegan::scores(m, display = "species")))
