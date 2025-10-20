@@ -133,19 +133,18 @@ gordi_read <- function(m,
   
   
   # Warning when interactions are present, but env table is not provided
-  n_interactions <- scores(m,
-                           display = 'all', 
-                           choices = choices, 
-                           scaling = scaling, 
-                           correlation = correlation, 
-                           hill = hill, # <--- ADDED MISSING 'hill' ARGUMENT
-                           const = const, 
-                           tidy = T) |> 
-    as_tibble() |> 
-    filter(str_detect(label, ':')) |> 
-    nrow()
-  
-  if (n_interactions > 0 && is.null(env)) {
+  if (type %in% c('RDA', 'CCA', 'db-RDA') && 
+      scores(m,
+             display = 'all', 
+             choices = choices, 
+             scaling = scaling, 
+             correlation = correlation, 
+             hill = hill, 
+             const = const, 
+             tidy = T) |> 
+      as_tibble() |> 
+      filter(str_detect(label, ':|*')) |> 
+      nrow() > 0 && is.null(env)) {
     stop('The model contains interaction terms, but for the correct calculation of their scores, the `env` data frame must be supplied to the `gordi_read()` function.')
   }
   
@@ -400,7 +399,7 @@ gordi_read <- function(m,
   } else if (type == 'NMDS') {
     
     # core site scores (required in all branches)
-    si_scores <- scores(m, scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'sites') |> dplyr::select(-score)
+    si_scores <- scores(m, display = 'sites', scaling = scaling, choices = choices, correlation = correlation, hill = hill, const = const, tidy = T) |> as_tibble() |> dplyr::filter(score == 'sites') |> dplyr::select(-score)
     
     # 4.1 If species scores exist in m, create pass object
     if(!is.null(scores(m, display = 'species', tidy = T))) {

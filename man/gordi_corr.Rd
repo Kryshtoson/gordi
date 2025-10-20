@@ -61,16 +61,16 @@ the current ordination plot stored in `pass$plot` using \code{\link[vegan]{envfi
 The function calculates the correlation scores (vectors and factor centroids)
 and optionally adjusts the p-values for multiple testing.
 
-**Plotting:**
+\strong{Plotting:}
 \itemize{
-  \item **Vectors** (for numeric variables) are plotted as arrows using \code{\link[ggplot2]{geom_segment}}.
-  \item **Centroids** (for factor levels) are plotted as points using \code{\link[ggplot2]{geom_point}}.
+  \item \strong{Vectors} (for numeric variables) are plotted as arrows using \code{\link[ggplot2]{geom_segment}}.
+  \item \strong{Centroids} (for factor levels) are plotted as points using \code{\link[ggplot2]{geom_point}}.
 }
 
 Aesthetic arguments (\code{colour}, \code{fill}, \code{alpha}, etc.) can be set in two ways:
 \enumerate{
-  \item **Mapping:** If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
-  \item **Constant:** Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
+  \item \strong{Mapping:} If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
+  \item \strong{Constant:} Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
 }
 
 Use \code{\link{gordi_colour}()} or \code{\link{gordi_shape}()} or other similar functions immediately after \code{gordi_corr()}
