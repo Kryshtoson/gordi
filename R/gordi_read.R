@@ -52,20 +52,25 @@
 #' 
 #' 
 #' @return A list with elements:
-#'   \describe{
-#'     \item{m}{the original ordination object}
-#'     \item{explained_variation}{eigenvalues divided by total inertia, or NA for DCA/NMDS}
-#'     \item{site_scores}{tibble of site (sample) scores}
-#'     \item{species_scores}{tibble of species scores}
-#'     \item{predictor_scores}{tibble of biplot scores for environmental predictors}
-#'     \item{env}{environmental data frame (if supplied)}
-#'     \item{traits}{trait data frame (if supplied)}
-#'     \item{choices}{selected axes}
-#'     \item{type}{character string with ordination type}
-#'     \item{axis_names}{axis labels}
-#'     \item{species_names}{species names}
-#'     \item{predictor_names}{predictor names, or NA for DCA/NMDS}
-#'   }
+#'  \describe{
+#'    \item{m}{The original ordination object.}
+#'    \item{type}{Character string with the determined ordination type (e.g., 'RDA', 'db-RDA', 'NMDS').}
+#'    \item{explained_variation}{A numeric vector of eigenvalues divided by total inertia. Returns \code{NA} for DCA and NMDS.}
+#'    \item{choices}{The numeric vector of selected ordination axes (e.g., \code{c(1, 2)}).}
+#'    \item{scaling}{Character string specifying the scaling used for scores (e.g., 'symm').}
+#'    \item{correlation}{Logical; value of the \code{correlation} argument used for scoring.}
+#'    \item{hill}{Logical; value of the \code{hill} argument used for scoring.}
+#'    \item{const}{Numeric vector of scaling constant(s) for scores.}
+#'    \item{axis_names}{Character vector of axis labels (e.g., \code{c('RDA1', 'RDA2')}).}
+#'    \item{site_scores}{Tibble of site (sample) scores (columns: Axis1, Axis2, ...).}
+#'    \item{species_scores}{Tibble of species scores (columns: Axis1, Axis2, ...). Can be \code{NULL} if scores could not be calculated.}
+#'    \item{predictor_scores}{Tibble of biplot/centroid scores for environmental predictors. Can be \code{NULL}.}
+#'    \item{species_names}{Tibble containing a single column, \code{species_names}, with the names of all species, matching the scores.}
+#'    \item{predictor_names}{Tibble containing a single column, \code{predictor_names}, with the names of all predictors/factors. Can be \code{NULL}.}
+#'    \item{env}{The environmental data frame (\code{env}) supplied to the function. Can be \code{NULL}.}
+#'    \item{spe}{The species data frame (\code{spe}) supplied to the function. Can be \code{NULL}.}
+#'    \item{traits}{The trait data frame (\code{traits}) supplied to the function. Can be \code{NULL}.}
+#'  }
 #' 
 #' @seealso \code{\link[gordi]{gordi_sites}}, \code{\link[gordi]{gordi_predict}}, \code{\link[gordi]{gordi_species}}
 #' 
@@ -125,6 +130,26 @@ gordi_read <- function(m,
   
   # --- pre-extract predictor scores ---
   # Only constrained ordinations (RDA, CCA, db-RDA) have predictor scores.
+  
+  
+  # Warning when interactions are present, but env table is not provided
+  n_interactions <- scores(m,
+                           display = 'all', 
+                           choices = choices, 
+                           scaling = scaling, 
+                           correlation = correlation, 
+                           hill = hill, # <--- ADDED MISSING 'hill' ARGUMENT
+                           const = const, 
+                           tidy = T) |> 
+    as_tibble() |> 
+    filter(str_detect(label, ':')) |> 
+    nrow()
+  
+  if (n_interactions > 0 && is.null(env)) {
+    stop('The model contains interaction terms, but for the correct calculation of their scores, the `env` data frame must be supplied to the `gordi_read()` function.')
+  }
+  
+  
   pred_scores <- if (type %in% c('RDA', 'db-RDA')) {
     scores(m, 
            display = 'all', 
@@ -170,6 +195,10 @@ gordi_read <- function(m,
                  type = type,
                  explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
                  choices = choices,
+                 scaling = scaling, 
+                 correlation = correlation, 
+                 hill = hill, 
+                 const = const,
                  axis_names = colnames(scores(m, display = 'sites', choices = choices)),
                  site_scores = if(type %in% c('CA', 'CCA', 'DCA')) {si_scores |> dplyr::select(-c(weight, label))} else {si_scores |> dplyr::select(-label)},
                  species_scores = if(type %in% c('CA', 'CCA', 'DCA')) {spe_scores |> dplyr::select(-c(weight, label))} else {spe_scores |> dplyr::select(-label)},
@@ -197,6 +226,10 @@ gordi_read <- function(m,
         type = type,
         explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
         choices = choices,
+        scaling = scaling, 
+        correlation = correlation, 
+        hill = hill, 
+        const = const,
         axis_names = colnames(scores(m, display = 'sites', choices = choices)),
         site_scores = si_scores |> dplyr::select(-label),
         species_scores = spe_scores |> select(-label),
@@ -221,6 +254,10 @@ gordi_read <- function(m,
           type = type,
           explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
           choices = choices,
+          scaling = scaling, 
+          correlation = correlation, 
+          hill = hill, 
+          const = const,
           axis_names = colnames(scores(m, display = 'sites', choices = choices)),
           site_scores = si_scores |> dplyr::select(-label),
           species_scores = NULL,
@@ -250,6 +287,10 @@ gordi_read <- function(m,
               type = type,
               explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
               choices = choices,
+              scaling = scaling, 
+              correlation = correlation, 
+              hill = hill, 
+              const = const,
               axis_names = colnames(scores(m, display = 'sites', choices = choices)),
               site_scores = si_scores |> dplyr::select(-label),
               species_scores = dbrda_spe_scores_lc |> select(-species_names),
@@ -274,6 +315,10 @@ gordi_read <- function(m,
               type = type,
               explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
               choices = choices,
+              scaling = scaling, 
+              correlation = correlation, 
+              hill = hill, 
+              const = const,
               axis_names = colnames(scores(m, display = 'sites', choices = choices)),
               site_scores = si_scores |> dplyr::select(-label),
               species_scores = dbrda_spe_scores_wa |> select(-species_names),
@@ -304,6 +349,10 @@ gordi_read <- function(m,
               type = type,
               explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
               choices = choices,
+              scaling = scaling, 
+              correlation = correlation, 
+              hill = hill, 
+              const = const,
               axis_names = colnames(scores(m, display = 'sites', choices = choices)),
               site_scores = si_scores |> dplyr::select(-label),
               species_scores = pcoa_spe_scores_lc |> select(-species_names),
@@ -327,6 +376,10 @@ gordi_read <- function(m,
               type = type,
               explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
               choices = choices,
+              scaling = scaling, 
+              correlation = correlation, 
+              hill = hill, 
+              const = const,
               axis_names = colnames(scores(m, display = 'sites', choices = choices)),
               site_scores = si_scores |> dplyr::select(-label),
               species_scores = NULL,
@@ -359,6 +412,10 @@ gordi_read <- function(m,
         type = type,
         explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
         choices = choices,
+        scaling = scaling, 
+        correlation = correlation, 
+        hill = hill, 
+        const = const,
         axis_names = colnames(scores(m, display = 'sites', choices = choices)),
         site_scores = si_scores |> dplyr::select(-label),
         species_scores = spe_scores |> select(-label),
@@ -383,6 +440,10 @@ gordi_read <- function(m,
           type = type,
           explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
           choices = choices,
+          scaling = scaling, 
+          correlation = correlation, 
+          hill = hill, 
+          const = const,
           axis_names = colnames(vegan::scores(m, display = 'sites', choices = choices)),
           site_scores = si_scores |> dplyr::select(-label),
           species_scores = NULL,
@@ -407,6 +468,10 @@ gordi_read <- function(m,
             type = type,
             explained_variation = if (type %in% c('DCA', 'NMDS')) {NA} else {vegan::eigenvals(m) / m$tot.chi},
             choices = choices,
+            scaling = scaling, 
+            correlation = correlation, 
+            hill = hill, 
+            const = const,
             axis_names = colnames(vegan::scores(m, display = 'sites', choices = choices)),
             site_scores = si_scores |> dplyr::select(-label),
             species_scores = nmds_spe_scores_wa |> select(-species_names),

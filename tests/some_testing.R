@@ -211,3 +211,72 @@ as_tibble(as.data.frame(scores(m, display = 'sites', scaling = scaling, choices 
 colnames(scores(m, display = 'sites', choices = 1:4))
 
 
+
+
+
+
+# gordi predict -----------------------------------------------------------
+
+names(dune.env)
+
+m <- capscale(sqrt(dune) ~ Moisture*Management, data = dune.env)
+
+gordi_read(m, dune.env) |> 
+  gordi_predict() 
+
+#
+
+
+
+length(names(m$terminfo$ordered) |> 
+  discard(~ .x %in% names(m$terminfo$xlev)) ) > 0
+
+obj$pred_df |> 
+  print(n = Inf)
+
+gordi_read(m, dune.env) -> obj
+obj$predictor_scores |> 
+  filter(score == 'centroids') |> 
+  nrow() == 0
+
+#
+
+bind_rows(
+  tibble(x = c(1,2),
+         y = c(2,3)), NULL)
+
+
+scores(m,
+       display = 'all', 
+       choices = 1:2, 
+       scaling = 'symm', 
+       correlation = T, 
+       const = c(1,2), 
+       tidy = T) |> 
+  as_tibble() 
+
+
+#  print(n = Inf)
+  # filter(score == 'constraints') |> 
+  # bind_cols(dune.env) |> 
+  # select(1:2, matches(names(m$terminfo$xlev))) |> 
+  # group_by(across(where(is.factor) | where(is.character))) |> 
+  # summarise(CAP1 = mean(CAP1),
+  #           CAP2 = mean(CAP2)) |> 
+  # ungroup() |> 
+  # relocate(where(is.numeric), .before = 1) |> 
+  # mutate(score = 'interaction_categorical',
+  #        label = paste(!!!syms(names(m$terminfo$xlev)), sep = ":"),
+  #        predictor_level = paste(!!!syms(names(m$terminfo$xlev)), sep = ":"),
+  #        predictor = paste(names(m$terminfo$xlev), collapse = ":"),
+  #        level = paste(!!!syms(names(m$terminfo$xlev)), sep = ":")) |> 
+  # select(-all_of(names(m$terminfo$xlev))) 
+
+
+
+
+names(m$terminfo$xlev)
+
+
+
+

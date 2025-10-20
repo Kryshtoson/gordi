@@ -91,6 +91,8 @@ gordi_predict <- function(
     scaling_coefficient = 0.9,
     repel_label = T) {
   
+  warning("So far, `gordi_predict()` can't calculate and plot scores for interactions of two continuous predictors and for interactions of continuous and categorical predictors.")
+  
   # Check if there are any predictors
   if (rlang::is_empty(pass$predictor_scores)) {
     stop("You did not use any predictor. Add one or more predictors when calculating ordination before calling gordi_predict().")
@@ -133,27 +135,92 @@ gordi_predict <- function(
     keep(~ .x) |> 
     names()
   
+  
+  
+  
+  ### --- MAIN TERMS ---
   # create a tibble with centroid scores
+  if (length(factor_predictors) > 0) {
+  
   factor_scores <- pass$predictor_scores |> 
     filter(score == 'centroids') |> 
     filter(str_detect(label, regex(paste(factor_predictors, collapse = '|')))) |> 
     mutate(predictor = str_extract(label, paste(factor_predictors, collapse = '|')),
            level = str_remove(label, paste(factor_predictors, collapse = '|')),
-           ordered = grepl(paste(ordered_factors, collapse = '|'), label))
+           ordered = as.character(grepl(paste(ordered_factors, collapse = '|'), label))) |> 
+    rename(Axis_pred1 = 1,
+           Axis_pred2 = 2) } else {factor_scores <- NULL}
   
   # create a tibble with arrow ends
-  vector_scores <- pass$predictor_scores |>
-    filter(score == "biplot") |>
-    filter(str_detect(label, regex(paste(vector_predictors, collapse = '|')))) |> 
-    bind_cols(vector_predictors) |> 
-    rename('predictor' = last_col()) |> 
-    mutate(level = NA,
-           ordered = NA)
+  # Inside gordi_predict, after 'vector_predictors' is defined (around line 100)
+  
+  if (length(vector_predictors) > 0) {
+    # If there ARE vector predictors, run your current logic:
+    vector_scores <- pass$predictor_scores |>
+      filter(score == "biplot") |>
+      filter(str_detect(label, ":", negate = T)) |> 
+      filter(str_detect(label, regex(paste(vector_predictors, collapse = '|')))) |> 
+      bind_cols(vector_predictors) |> 
+      rename('predictor' = last_col()) |> 
+      mutate(level = NA_character_,
+             ordered = NA_character_) |> # <--- Ensure NA_character_ here
+      rename(Axis_pred1 = 1,
+             Axis_pred2 = 2) 
+  } else {vector_scores <- NULL}
+  
+
+  
+  ### --- INTERACTION TERMS ---
+  if (length(factor_predictors) > 1 && grepl(':|\\*', as.character(m$call$formula)[3])) {
+  
+  # categorical variables in interaction
+  # pre extract arguments
+  m <- pass$m
+  env <- pass$env
+  choices <- pass$choices
+  scaling <- pass$scaling
+  correlation <- pass$correlation
+  hill <- pass$hill
+  const <- pass$const
+
+  
+  # extract centroids from LC site scores by defined interaction groups
+  interaction_scores <- scores(m,
+         display = 'all', 
+         choices = choices, 
+         scaling = scaling, 
+         correlation = correlation, 
+         hill = hill,
+         const = const, 
+         tidy = T) |> 
+    as_tibble() |> 
+    filter(score == 'constraints') |>
+    bind_cols(env) |> 
+    rename('Axis_pred1' = 1,
+          'Axis_pred2' = 2) |> 
+    select(starts_with('Axis'), matches(factor_predictors)) |> 
+    group_by(across(where(is.factor) | where(is.character))) |>
+    summarise(Axis_pred1 = mean(Axis_pred1),
+              Axis_pred2 = mean(Axis_pred2)) |>
+    ungroup() |> 
+    relocate(where(is.numeric), .before = 1) |> 
+    mutate(score = 'interaction_factors_centroids',
+           label = paste(!!!syms(factor_predictors), sep = ":"),
+           predictor_level = paste0(names(m$terminfo$xlev)[1],
+                                    "_",
+                                    !!sym(names(m$terminfo$xlev)[1]),
+                                    ":", names(m$terminfo$xlev)[2],
+                                    "_",
+                                    !!sym(names(m$terminfo$xlev)[2])),
+           predictor = paste(factor_predictors, collapse = ":"),
+           level = paste(!!!syms(factor_predictors), sep = ":"),
+           ordered = NA_character_) |> 
+    select(-all_of(factor_predictors)) } else {interaction_scores <- NULL}
+  
   
   pred_df <- bind_rows(vector_scores, factor_scores) |> 
-    rename(Axis_pred1 = 1,
-           Axis_pred2 = 2) |> 
-    unite('predictor_level', predictor, level, sep = ': ', remove = F, na.rm = T)
+    unite('predictor_level', predictor, level, sep = '_', remove = F, na.rm = T) |> 
+    bind_rows(interaction_scores)
   
   pass$pred_df <- pred_df
 
@@ -309,13 +376,13 @@ gordi_predict <- function(
 
   ### add to plot
   p <- p + do.call(geom_point,
-                   c(list(data = pred_df |> filter(score == 'centroids'),
+                   c(list(data = pred_df |> filter(score %in% c('centroids', 'interaction_factors_centroids')),
                           mapping = do.call(aes, aes_args_point)),
                      const_args_point))
 
   if (isTRUE(label)){
     if (isTRUE(repel_label)){
-      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score == 'centroids'), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 'black')
+      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score %in% c('centroids', 'interaction_factors_centroids')), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 'black')
     } else {
       p <- p + geom_text(data = pred_df |> filter(score == 'centroids'), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 'black')
     }

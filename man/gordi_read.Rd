@@ -56,20 +56,25 @@ WA scores via \code{wascores}. Note: WA scores are not supported for PCoA yet.}
 }
 \value{
 A list with elements:
-  \describe{
-    \item{m}{the original ordination object}
-    \item{explained_variation}{eigenvalues divided by total inertia, or NA for DCA/NMDS}
-    \item{site_scores}{tibble of site (sample) scores}
-    \item{species_scores}{tibble of species scores}
-    \item{predictor_scores}{tibble of biplot scores for environmental predictors}
-    \item{env}{environmental data frame (if supplied)}
-    \item{traits}{trait data frame (if supplied)}
-    \item{choices}{selected axes}
-    \item{type}{character string with ordination type}
-    \item{axis_names}{axis labels}
-    \item{species_names}{species names}
-    \item{predictor_names}{predictor names, or NA for DCA/NMDS}
-  }
+ \describe{
+   \item{m}{The original ordination object.}
+   \item{type}{Character string with the determined ordination type (e.g., 'RDA', 'db-RDA', 'NMDS').}
+   \item{explained_variation}{A numeric vector of eigenvalues divided by total inertia. Returns \code{NA} for DCA and NMDS.}
+   \item{choices}{The numeric vector of selected ordination axes (e.g., \code{c(1, 2)}).}
+   \item{scaling}{Character string specifying the scaling used for scores (e.g., 'symm').}
+   \item{correlation}{Logical; value of the \code{correlation} argument used for scoring.}
+   \item{hill}{Logical; value of the \code{hill} argument used for scoring.}
+   \item{const}{Numeric vector of scaling constant(s) for scores.}
+   \item{axis_names}{Character vector of axis labels (e.g., \code{c('RDA1', 'RDA2')}).}
+   \item{site_scores}{Tibble of site (sample) scores (columns: Axis1, Axis2, ...).}
+   \item{species_scores}{Tibble of species scores (columns: Axis1, Axis2, ...). Can be \code{NULL} if scores could not be calculated.}
+   \item{predictor_scores}{Tibble of biplot/centroid scores for environmental predictors. Can be \code{NULL}.}
+   \item{species_names}{Tibble containing a single column, \code{species_names}, with the names of all species, matching the scores.}
+   \item{predictor_names}{Tibble containing a single column, \code{predictor_names}, with the names of all predictors/factors. Can be \code{NULL}.}
+   \item{env}{The environmental data frame (\code{env}) supplied to the function. Can be \code{NULL}.}
+   \item{spe}{The species data frame (\code{spe}) supplied to the function. Can be \code{NULL}.}
+   \item{traits}{The trait data frame (\code{traits}) supplied to the function. Can be \code{NULL}.}
+ }
 }
 \description{
 \code{gordi_read()} is the first function in the family of \code{gordi_} functions. 
