@@ -1,3 +1,43 @@
+#'Connect observations and draw spiders/hulls
+#'@description 
+#'The function adds connections between observations using ggplot2::geom_path() (via `group`), and/or draws spider/hull segments from cluster centroid to each observation (via `cluster` and `spider`).
+#'
+#' @details 
+#' To connect observations, you need to set argument `group` to a column in `env` dataframe (supplied in [gordi_read()]) that identifies observations to be connected. Lines are drawn with [ggplot2::geom_path()]. For drawing spiders, set argument `cluster` to a column in `env` dataframe (supplied in [gordi_read()]), and `spider = TRUE`. Centroids are computed as the mean of site scores within each cluster, and segments from centroids to each observation are drawn with [ggplot2::geom_segment()]. The aesthetics of connecting lines can be modified by multiple arguments.
+#' 
+#' @param pass A list object produced by [gordi_read()].
+#' @param group Character; a grouping variable = a column in `env` dataframe (supplied in [gordi_read()]), used to connect observations.
+#' @param cluster Character; column in `env` dataframe (supplied in [gordi_read()]), defining clusters for spiders.
+#' @param spider Logical; draw spider segment for each centroid.
+#' @param hull Logical; draw hulls. Does not work yet.
+#' @param label Logical; when `TRUE` and `spider = TRUE`, draw one label per cluster at the centroid location.
+#' @param linetype Modify the appearance of lines (paths, segments). Can be specified by numeric values (0-6) or by a name ('blank', 'solid', 'dashed', 'dotted', 'dotdash', 'longdash', 'twodash'). Default `'solid'`.
+#' @param linewidth Numeric; set line width.
+#' @param colour Changes site colours. Can be either: a variable = a specific column name of 'env' dataset, a constant value: R colour name, numeric value or hex (e.g. `'green'`, `1`, `'#6aa84f'`). When left as `''`, the internal default colours are used.
+#' @param arrow Logical; draws arrows instead of lines.
+#' @param arrow_type Character; type of arrow, either 'open' (default) or 'closed'.
+#' @param arrow_length Numeric; set length of the arrowhead in centimeters. Deafault `0.3`.
+#' @param arrow_ends Character; which ends to draw arrowheads on. One of 'last' (default), 'first', 'both'.
+#' @param arrow_angle Numeric; angle of the arrowhead in degrees. Default `30`.
+#' 
+#' @return The updated `pass` object with added layers (either lines or spiders) to `pass$plot`.
+#' 
+#' @examples
+#' # display site scores colour sites based on treatment, and connect the same sites
+#' gordi_read(pco.bc, env = auch.env)|> gordi_sites(colour = 'Treatment')|> gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen'))|> gordi_cluster(group = 'site', linetype = 'dotted')
+#'
+#' #display NMDS, draw spiders to hydrology clusters and label centroids
+#' gordi_read(nmds.3, spe = chiro, env = chiro.env)|> gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
+#' 
+#' @seealso [gordi_read()], [gordi_sites()], [gordi_colour()], [ggplot2::geom_path()], [ggplot2::geom_segment()], [ggplot2::geom_label()]
+#' 
+#' @importFrom ggplot2 ggplot aes geom_path geom_segment geom_label theme_bw labs theme element_text
+#' @importFrom dplyr group_by summarise left_join
+#' @importFrom rlang sym .data
+#' @importFrom ggnewscale new_scale_colour
+#' @importFrom grid arrow unit
+#' @export
+
 gordi_cluster <- function(pass,
                           group = '', #column in env table to connect observations (resurvey etc.)
                           cluster = '', #column in env table for clustering
