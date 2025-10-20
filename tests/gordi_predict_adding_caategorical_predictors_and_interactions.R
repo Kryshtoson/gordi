@@ -14,7 +14,7 @@
 #' both, static and dynamic variable (e.g., 'red' or 'elevation').
 #' 
 #' @param pass Object from [gordi_read()] function.
-#' @param label Logical; default = T, whether to display label by each point/arrow 
+#' @param label Logical; default = F, whether to display label by each point/arrow 
 #'   or not. Labels use the `predictor` name for arrows and the combined 
 #'   `predictor: level` for centroids. If you want to customize the labels, you can 
 #'   with [gordi_label()] function, which overrides this setting.
@@ -44,7 +44,7 @@
 #'   is `0.9` which means that the predictor arrow will be as long as 0.9 of
 #'   the longest axis displayed in the plotframe.
 #' @param repel_label Logical; repels labels of predictors for better readability.
-#'   Default is T. If you want to customize the labels, you can do it with
+#'   Default is F. If you want to customize the labels, you can do it with
 #'   [gordi_label()] function, which overrides this setting.    
 #' 
 #' 
@@ -79,7 +79,7 @@
 #' @export
 gordi_predict <- function(
     pass,
-    label = T,
+    label = F,
     colour = '',
     alpha = '',
     arrow_size = '',
@@ -89,7 +89,7 @@ gordi_predict <- function(
     shape = '',
     size = '',
     scaling_coefficient = 0.9,
-    repel_label = T) {
+    repel_label = F) {
   
   warning("So far, `gordi_predict()` can't calculate and plot scores for interactions of two continuous predictors and for interactions of continuous and categorical predictors.")
   
@@ -223,6 +223,8 @@ gordi_predict <- function(
     bind_rows(interaction_scores)
   
   pass$pred_df <- pred_df
+  
+  pass$predictor_scores <- pred_df
 
   # interaction terms???
 
@@ -270,6 +272,7 @@ gordi_predict <- function(
 
   ### Set scaling coefficient
   # extract plot frame size (x and y axis lengths)
+  if (!is.null(vector_scores)) {
   p_build <- ggplot_build(p)
 
   plot_range <- c(xmin_plot = p_build$layout$panel_params[[1]]$x.range[1],
@@ -283,6 +286,7 @@ gordi_predict <- function(
                        ymax_pred = max(pred_df[pred_df$score == 'biplot',2]))
 
   coef <- (max(abs(plot_range)) / max(abs(predictor_range))) * scaling_coefficient
+  } else {coef <- 1}
 
 
   ### Prepare aes arguments for geom_segment()
@@ -331,9 +335,9 @@ gordi_predict <- function(
 
   if (isTRUE(label)){
     if (isTRUE(repel_label)){
-      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 'black')
+      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 2)
     } else {
-      p <- p + geom_text(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 'black')
+      p <- p + geom_text(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 2)
     }
   }
 
@@ -382,9 +386,9 @@ gordi_predict <- function(
 
   if (isTRUE(label)){
     if (isTRUE(repel_label)){
-      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score %in% c('centroids', 'interaction_factors_centroids')), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 'black')
+      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score %in% c('centroids', 'interaction_factors_centroids')), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 2)
     } else {
-      p <- p + geom_text(data = pred_df |> filter(score == 'centroids'), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 'black')
+      p <- p + geom_text(data = pred_df |> filter(score == 'centroids'), aes(Axis_pred1, Axis_pred2, label = predictor_level), colour = 2)
     }
   }
 

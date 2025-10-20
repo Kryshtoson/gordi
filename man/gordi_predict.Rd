@@ -2,52 +2,66 @@
 % Please edit documentation in R/gordi_predict.R
 \name{gordi_predict}
 \alias{gordi_predict}
-\title{Extracts predictor scores and relevant stuff and creates plot}
+\title{Extracts predictor scores and relevant stuff and creates plot - so far working for capscale}
 \usage{
 gordi_predict(
   pass,
-  label = T,
+  label = F,
   colour = "",
   alpha = "",
   arrow_size = "",
   linewidth = "",
   linetype = "",
+  fill = "",
+  shape = "",
+  size = "",
   scaling_coefficient = 0.9,
-  repel_label = T
+  repel_label = F
 )
 }
 \arguments{
 \item{pass}{Object from [gordi_read()] function.}
 
-\item{label}{Logical; default = T, whether to display label by each point/arrow 
-or not. In [gordi_predict()], label can be only `predictor_names`, which are 
-displayed as a full name. If you want to customize the labels, you can it
+\item{label}{Logical; default = F, whether to display label by each point/arrow 
+or not. Labels use the `predictor` name for arrows and the combined 
+`predictor: level` for centroids. If you want to customize the labels, you can 
 with [gordi_label()] function, which overrides this setting.}
 
 \item{colour}{Colour can be defined statically as word from the [colours()]
 list (e.g. 'red'), HEX code (e.g. #5d782e), or number from [palette()] (e.g. 3).
 It can also defined dynamically (according to some variable, e.g. elevation
 or vegetation type). This variable has to be present in the `env` table and its
-name has to be written in "quotation marks". Default colour of arrows is 4.}
+name has to be written in "quotation marks". Default colour of arrows is 2, 
+and 2 for points.}
 
-\item{alpha}{Transparency of symbols. Numeric value. Default is 0.6. Can be set
-statically or dynamically (use "").}
+\item{alpha}{Transparency of symbols/arrows. Numeric value. Default is 1 (for arrows)
+and 1 (for points). Can be set statically or dynamically (use "").}
 
 \item{arrow_size}{Numeric; length of arrow in cm. Default is 0.3 cm.}
 
-\item{linewidth}{Self-explanatory. Can be numerical value. See
-[aes_linetype_size_shape()] for more details.}
+\item{linewidth}{Self-explanatory. Can be numerical value. Used for arrows. See
+[aes_linetype_size_shape()] for more details. Default is 0.7.}
 
 \item{linetype}{Changes type of line used in arrows. Can be specified with either
 an integer (0-6), a name (0 = blank, 1 = solid, 2 = dashed, 3 = dotted,
 4 = dotdash, 5 = longdash, 6 = twodash). See [aes_linetype_size_shape()] for 
-more details.}
+more details. Default is 1.}
+
+\item{fill}{Fill colour for centroid points. Can be defined statically (e.g., 'red', '#ff0000', or 3) 
+or dynamically (e.g., "elevation"). Default is 3.}
+
+\item{shape}{Shape of centroid points. Can be specified with either 
+an integer (0-25) or a name. See [aes_linetype_size_shape()] for more details. 
+Default is 16.}
+
+\item{size}{Size of centroid points. Numeric value. Can be set statically 
+or dynamically (use ""). Default is 4.}
 
 \item{scaling_coefficient}{Numeric; edits the lengts of predictor arrow. Default value
 is `0.9` which means that the predictor arrow will be as long as 0.9 of
 the longest axis displayed in the plotframe.}
 
-\item{repel_label}{Logical; repels labels of species for better readability.
+\item{repel_label}{Logical; repels labels of predictors for better readability.
 Default is F. If you want to customize the labels, you can do it with
 [gordi_label()] function, which overrides this setting.}
 }
@@ -57,9 +71,10 @@ The input object `pass` with an updated `plot` element that includes
 }
 \description{
 [gordi_predict()] takes the result of [gordi_read()] and creates plot with
-predictor arrows. So far, it can work with continuous explanatory variables,
-as for categorical we need to come up with a way how to calculate scores
-for the last category. It also can't display explanatory variables passively.
+predictor arrows (for continuous variables) and points (for categorical
+variables, i.e., centroids). So far, it can work with continuous explanatory 
+variables. It also can't display explanatory variables passively (i.e., not 
+involved in the ordination model).
 
 There will be a special function for this once, maybe something as
 `gordi_corr()`. Similarly to [gordi_species()] and [gordi_sites()],
@@ -75,8 +90,8 @@ library(ggrepel)
 data(dune)
 data(dune.env)
 
-m <- capscale(dune ~ A1, data = dune.env)
+m <- capscale(dune ~ A1 + Management, data = dune.env)
 gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |>
   gordi_species(label = F) |>
-  gordi_predict(scaling_coefficient = 1)   
+  gordi_predict(scaling_coefficient = 1)    
 }

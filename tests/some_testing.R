@@ -5,6 +5,8 @@ library(vegan)
 
 devtools::document()
 
+rm(gordi_predict)
+
 data(dune)
 data(dune.env)
 
@@ -219,9 +221,12 @@ colnames(scores(m, display = 'sites', choices = 1:4))
 
 names(dune.env)
 
-m <- capscale(sqrt(dune) ~ Moisture*Management, data = dune.env)
+m <- capscale(sqrt(dune) ~ A1 + Moisture + Management, data = dune.env)
 
-gordi_read(m, dune.env) |> 
+scores(m, tidy = T, correlation = T)
+
+gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
+  gordi_species() |> 
   gordi_predict() 
 
 #
