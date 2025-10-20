@@ -106,7 +106,7 @@ gordi_fit <- function(pass,
   if (inherits(m, 'capscale') || type == 'DCA'){
     warning("Using function `envfit()` to calculate goodness of fit (R²).")
     if (!is.null(slice_max)){
-      goodness_fit <- envfit(m, env = pass$spe, display = 'lc', choices = choices, permutations = permutations)
+      goodness_fit <- envfit(m, env = pass$spe, display = 'si', choices = choices, permutations = permutations)
       r <- goodness_fit$vectors$r |> as_tibble()
       spe_fitted <- bind_cols(pass$species_names, r, pass$species_scores)
     }
