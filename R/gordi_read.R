@@ -143,8 +143,9 @@ gordi_read <- function(m,
              const = const, 
              tidy = T) |> 
       as_tibble() |> 
-      filter(str_detect(label, ':|*')) |> 
-      nrow() > 0 && is.null(env)) {
+      filter(str_detect(label, ':|\\*')) |> 
+      nrow() > 0
+      && is.null(env)) {
     stop('The model contains interaction terms, but for the correct calculation of their scores, the `env` data frame must be supplied to the `gordi_read()` function.')
   }
   
