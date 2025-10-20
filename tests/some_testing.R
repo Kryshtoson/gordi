@@ -51,12 +51,12 @@ scores(m,
 
 # gordi_corr --------------------------------------------------------------
 
-m <- cca(sqrt(dune) ~ 1)
+m <- metaMDS(sqrt(dune))
 
 gordi_read(m, env = dune.env, scaling = 'species') |> 
   gordi_sites() |> 
-  gordi_corr(variables = c('A1', 'Use'), p_val_adjust = T, perm = 999, label = T, colour = 'variable_level') |> 
-  gordi_colour(scale = 'discrete', family = 'viridis') 
+  gordi_corr(variables = c('A1', 'Use', 'Management'), p_val_adjust = T, perm = 999, label = T, colour = 'variable') |> 
+  gordi_colour(scale = 'discrete', family = 'brewer') 
 
 
 #

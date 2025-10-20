@@ -11,6 +11,7 @@ gordi_corr(
   p_val_adjust = TRUE,
   p_val_adjust_method = "bonferroni",
   strata = NULL,
+  label = F,
   colour = "",
   fill = "",
   alpha = "",
@@ -18,7 +19,8 @@ gordi_corr(
   linewidth = "",
   shape = "",
   size = "",
-  arrow_size = 0.3
+  arrow_size = 0.3,
+  repel_label = F
 )
 }
 \arguments{
