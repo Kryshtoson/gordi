@@ -53,7 +53,7 @@
 #'   predictor arrows and labels.
 #' 
 #' 
-#' @importFrom rlang is_empty sym expr
+#' @importFrom rlang is_empty sym syms expr
 #' @importFrom stringr str_detect regex str_extract str_remove
 #' @importFrom dplyr filter mutate bind_cols rename
 #' @importFrom tidyr unite
@@ -94,9 +94,8 @@ gordi_predict <- function(
   
   warning("So far, `gordi_predict()` can't calculate and plot scores for interactions of two continuous predictors and for interactions of continuous and categorical predictors.")
   
-  # Check if there are any predictors
-  if (rlang::is_empty(pass$predictor_scores)) {
-    stop("You did not use any predictor. Add one or more predictors when calculating ordination before calling gordi_predict().")
+  if (!pass$type %in% c('RDA', 'CCA', 'db-RDA') || rlang::is_empty(pass$predictor_scores)) {
+    stop("You provided an unconstrained ordination. Predictors can't be displayed. If you want to passively plot environmental variables, try `gordi_corr()`.")
   }
   
   ### ordination axis labels
