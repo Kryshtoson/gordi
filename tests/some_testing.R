@@ -2,13 +2,95 @@ remotes::install_github('Kryshtoson/gordi')
 library(gordi)
 library(tidyverse)
 library(vegan)
+library(readxl)
 
 devtools::document()
 
-rm(gordi_predict)
 
 data(dune)
 data(dune.env)
+
+read_csv('data/schrankogel/schrankogel_spe.csv') |> 
+  select(-logger_ID) -> spe
+
+
+
+
+# gordi_read problem ------------------------------------------------------
+
+auch <- read_excel('C:/Users/User/Documents/R/Gordi_in_community_data_analysis/data/LimestoneQuarries_Aucheno/Aucheno_sum.xlsx')
+auch.env <- read_excel('C:/Users/User/Documents/R/Gordi_in_community_data_analysis/data/LimestoneQuarries_Aucheno/Krisi Cesky kras.xls')
+
+pco.bc <- capscale(auch~1, distance = "bray", sqrt.dist = T, binary = F) 
+gordi_read(pco.bc, spe = auch, env = auch.env)
+#gordi_read(m)
+
+
+
+sc <- scores(m, scaling = 'symm', choices = 1:2, correlation = F, hill = F, const = c(2,2), tidy = T) |> as_tibble() |> dplyr::filter(score == 'species') |> dplyr::select(-score)
+o <- gordi_read(pco.bc)
+
+o$site_scores$NMDS1 == sc$NMDS1
+o$site_scores
+o$species_scores
+
+scores(m,
+       display = 'all', 
+       choices = 1:2, 
+       scaling = 'symm', 
+       correlation = F, 
+       hill = F, 
+       const = c(2,2), 
+       tidy = T) |> 
+  as_tibble() |> 
+  filter(str_detect(label, ':|\\*')) |> 
+  nrow() > 0
+
+
+
+
+# gordi_corr --------------------------------------------------------------
+
+m <- cca(sqrt(dune) ~ 1)
+
+gordi_read(m, env = dune.env, scaling = 'species') |> 
+  gordi_sites() |> 
+  gordi_corr(variables = c('A1', 'Use'), p_val_adjust = T, perm = 999, label = T, colour = 'variable_level') |> 
+  gordi_colour(scale = 'discrete', family = 'viridis') 
+
+
+#
+
+scores(m, display = 'sites', scaling = 'sites', const = c(1,2)) ==
+  scores(m, display = 'sites', scaling = 'sites', const = c(5,2))
+
+
+envfit(ord = m,
+       env = dune.env[ , c('A1'), drop = FALSE],
+       permutations = 999,
+       choices = 1:2) |> 
+  p.adjust.envfit() -> ef
+
+
+ef$vectors$r
+
+
+# Example data for illustration:
+patterns <- c("Habitat", "SoilType", "Habitat")
+strings <- c("HabitatForest", "SoilTypeClay", "HabitatGrass")
+
+# sub() applies pattern[1] to string[1], pattern[2] to string[2], etc.
+result <- sub(patterns, "", strings)
+result
+# result will be: c("Forest", "Clay", "Grass")
+
+
+
+
+
+
+# mess --------------------------------------------------------------------
+
 
 m <- capscale(sqrt(dune) ~ A1 + Management + Use, dune.env, distance = 'bray', sqrt.dist = T)
 
@@ -180,7 +262,7 @@ envfit(m, env = spe, permutations = 0) |>
 
 
 
-
+# getting species scores when distance matrix provided --------------------
 
 
 
@@ -221,13 +303,12 @@ colnames(scores(m, display = 'sites', choices = 1:4))
 
 names(dune.env)
 
-m <- capscale(sqrt(dune) ~ A1 + Moisture + Management, data = dune.env)
 
 scores(m, tidy = T, correlation = T)
 
 gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
   gordi_species() |> 
-  gordi_predict() 
+  gordi_predict(colour = 'predictor', shape = 'predictor', size = 2, label = T, repel_label = T) 
 
 #
 
@@ -259,29 +340,3 @@ scores(m,
        const = c(1,2), 
        tidy = T) |> 
   as_tibble() 
-
-
-#  print(n = Inf)
-  # filter(score == 'constraints') |> 
-  # bind_cols(dune.env) |> 
-  # select(1:2, matches(names(m$terminfo$xlev))) |> 
-  # group_by(across(where(is.factor) | where(is.character))) |> 
-  # summarise(CAP1 = mean(CAP1),
-  #           CAP2 = mean(CAP2)) |> 
-  # ungroup() |> 
-  # relocate(where(is.numeric), .before = 1) |> 
-  # mutate(score = 'interaction_categorical',
-  #        label = paste(!!!syms(names(m$terminfo$xlev)), sep = ":"),
-  #        predictor_level = paste(!!!syms(names(m$terminfo$xlev)), sep = ":"),
-  #        predictor = paste(names(m$terminfo$xlev), collapse = ":"),
-  #        level = paste(!!!syms(names(m$terminfo$xlev)), sep = ":")) |> 
-  # select(-all_of(names(m$terminfo$xlev))) 
-
-
-
-
-names(m$terminfo$xlev)
-
-
-
-

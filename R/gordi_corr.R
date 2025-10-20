@@ -8,16 +8,16 @@
 #' The function calculates the correlation scores (vectors and factor centroids)
 #' and optionally adjusts the p-values for multiple testing.
 #'
-#' **Plotting:**
+#' \strong{Plotting:}
 #' \itemize{
-#'   \item **Vectors** (for numeric variables) are plotted as arrows using \code{\link[ggplot2]{geom_segment}}.
-#'   \item **Centroids** (for factor levels) are plotted as points using \code{\link[ggplot2]{geom_point}}.
+#'   \item \strong{Vectors} (for numeric variables) are plotted as arrows using \code{\link[ggplot2]{geom_segment}}.
+#'   \item \strong{Centroids} (for factor levels) are plotted as points using \code{\link[ggplot2]{geom_point}}.
 #' }
 #'
 #' Aesthetic arguments (\code{colour}, \code{fill}, \code{alpha}, etc.) can be set in two ways:
 #' \enumerate{
-#'   \item **Mapping:** If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
-#'   \item **Constant:** Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
+#'   \item \strong{Mapping:} If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
+#'   \item \strong{Constant:} Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
 #' }
 #'
 #' Use \code{\link{gordi_colour}()} or \code{\link{gordi_shape}()} or other similar functions immediately after \code{gordi_corr()}
@@ -68,6 +68,7 @@ gordi_corr <- function(
     p_val_adjust = TRUE,
     p_val_adjust_method = 'bonferroni',
     strata = NULL,
+    label = F,
     colour = '', 
     fill = '', 
     alpha = '',
@@ -75,10 +76,11 @@ gordi_corr <- function(
     linewidth = '',
     shape = '',
     size = '',
-    arrow_size = 0.3) {
+    arrow_size = 0.3,
+    repel_label = F) {
   
   if(is.null(variables) || length(variables) == 0 || (length(variables) == 1 && identical(variables, ''))) {
-    stop('You must provide at least one variable you want correlate with the ordination axes.')}
+    stop('You must provide at least one variable you want to fit to the ordination.')}
   
   if(permutations == 0) {warning('You did not specify the number of permutations. No p-values were computed.')}
   
@@ -129,27 +131,32 @@ gordi_corr <- function(
   # extract vector scores
   if (!is.null(ef$vectors)) {
     vec_tbl <- dplyr::as_tibble(vegan::scores(ef, display = 'bp'), rownames = 'covariate') |> 
-      dplyr::mutate(type = 'vector',
-                    name = names(ef$vectors$r))
+      dplyr::mutate(score = 'vector',
+                    variable = names(ef$vectors$r),
+                    variable_level = names(ef$vectors$r)) |> 
+      relocate(starts_with('Axis'), .before = 1) 
+      
     coords <- append(coords, list(vec_tbl))
-  }
+  } else {vec_tbl <- NULL}
   
   # extract factor scores
   if (!is.null(ef$factors)) {
     fct_tbl <- dplyr::as_tibble(vegan::scores(ef, display = 'cn'), rownames = 'covariate') |> 
-      dplyr::mutate(type = 'factor',
-                    name = if(length(covariate) > 0 && length(names(ef$factors$r)) > 0) {
+      dplyr::mutate(score = 'factor',
+                    variable = if(length(covariate) > 0 && length(names(ef$factors$r)) > 0) {
                       factor_names <- names(ef$factors$r)
                       # matrix of matches: rows = covariates, columns = factor names
                       matches <- outer(covariate, factor_names, Vectorize(function(cv, f) grepl(f, cv, fixed = TRUE)))
                       # pick first matching factor name per covariate
                       factor_names[apply(matches, 1, function(x) which(x)[1])]
-                    } else {NA_character_})
+                    } else {NA_character_},
+                    variable_level = str_replace(covariate, variable, "")) |>  
+      relocate(starts_with('Axis'), .before = 1)
+    
     coords <- append(coords, list(fct_tbl))
-  }
+  } else {fct_tbl <- NULL}
   
-  pass$corr_coords <- dplyr::bind_rows(coords)
-  
+  pass$corr_coords <- dplyr::bind_rows(coords) 
   
   
   # --- Collect stats ---
@@ -165,13 +172,18 @@ gordi_corr <- function(
     pvals_vct <- rep(NA_real_, N_vct)
     
     # 3. OVERWRITE only if p-values exist
-    if(length(ef$vectors$pvals) > 0) {pvals_vct <- ef$vectors$pvals} 
+    if (length(ef$vectors$pvals) > 0) {pvals_vct <- ef$vectors$pvals} 
     
     vct_stats <- tibble::tibble(
       variable = names(ef$vectors$r),
       type = "vector",
       r2 = ef$vectors$r,
       p_value_adj = pvals_vct)
+    
+    if (p_val_adjust == F) {
+      vct_stats <- vct_stats |> 
+        rename('p_value' = 'p_value_adj')
+    }
     
     stats <- append(stats, list(vct_stats))
   }
@@ -192,7 +204,12 @@ gordi_corr <- function(
       variable = names(ef$factors$r),
       type = "factor",
       r2 = ef$factors$r,
-      p_value_adj = pvals_fct)
+      p_value_adj = pvals_fct) 
+    
+    if (p_val_adjust == F) {
+      fct_stats <- fct_stats |> 
+        rename('p_value' = 'p_value_adj')
+    }
     
     stats <- append(stats, list(fct_stats))
   }
@@ -214,7 +231,12 @@ gordi_corr <- function(
   names(pass$corr_coords)[2:3] <- paste0("Axis_corr", 1:2)
   
   ### create corr_df which is then called in the ggplot
-  corr_df <- pass$corr_coords
+  corr_df <- pass$corr_coords |> 
+    select(Axis_corr1, Axis_corr2, score, label = covariate, variable_level, variable)
+  
+  pass$corr_coords <- pass$corr_coords |> 
+    select(Axis_corr1, Axis_corr2, score, label = covariate, variable_level, variable)
+  
   
   ### plot
   # Creates blank plot if this function is used as the first one after gordi_read()
@@ -277,7 +299,7 @@ gordi_corr <- function(
   # Add constant arguments for geom_segment() if not mapped
   # colour
   if(!map_colour){
-    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 'gray10'}}
+    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 'gray62'}}
   # alpha
   if(!map_alpha){
     if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 1}}
@@ -297,17 +319,19 @@ gordi_corr <- function(
   
   ### add to plot  
   
-  if (!is.null(corr_df |> filter(type == 'vector'))) {
+  if (!is.null(corr_df |> filter(score == 'vector'))) {
     p <- p + do.call(geom_segment,
-                     c(list(data = corr_df |> filter(type == 'vector'),
+                     c(list(data = corr_df |> filter(score == 'vector'),
                             mapping = do.call(aes, aes_args_segment)),
                        const_args_segment)) 
     
-    p <- p + ggplot2::labs(colour = 'Covariate',
-                           fill = 'Covariate',
-                           alpha = 'Covariate',
-                           linewidth = 'Covariate',
-                           linetype = 'Covariate')
+    if (isTRUE(label)){
+      if (isTRUE(repel_label)){
+        p <- p + ggrepel::geom_text_repel(data = corr_df |> filter(score == 'vector'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+      } else {
+        p <- p + geom_text(data = corr_df |> filter(score == 'vector'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+      }
+    }
   }
   
   ### Categorical variables
@@ -330,9 +354,9 @@ gordi_corr <- function(
   const_args_point <- list()
   
   if(!map_colour){
-    if(!identical(colour, '')) {const_args_point$colour <- colour} else {const_args_point$colour <- 'gray30'}}
+    if(!identical(colour, '')) {const_args_point$colour <- colour} else {const_args_point$colour <- 'gray62'}}
   if(!map_fill){
-    if(!identical(fill, '')) {const_args_point$fill <- fill} else {const_args_point$fill <- 2}}
+    if(!identical(fill, '')) {const_args_point$fill <- fill} else {const_args_point$fill <- 'gray62'}}
   if(!map_alpha){
     if(!identical(alpha, '')) {const_args_point$alpha <- alpha} else {const_args_point$alpha <- 1}}
   if(!map_shape){
@@ -341,19 +365,21 @@ gordi_corr <- function(
     if(!identical(size, '')) {const_args_point$size <- size} else {const_args_point$size <- 2}}
   
   # add to plot
-  if (!is.null(corr_df |> filter(type == 'factor'))) {
+  if (!is.null(corr_df |> filter(score == 'factor'))) {
     p <- p + do.call(geom_point,
-                     c(list(data = corr_df |> filter(type == 'factor'),
+                     c(list(data = corr_df |> filter(score == 'factor'),
                             mapping = do.call(aes, aes_args_point)),
                        const_args_point)) 
     
-    p <- p + ggplot2::labs(
-      colour = 'Covariate',
-      fill = 'Covariate',
-      alpha = 'Covariate',
-      shape = 'Covariate',
-      size = 'Covariate')
+    if (isTRUE(label)){
+      if (isTRUE(repel_label)){
+        p <- p + ggrepel::geom_text_repel(data = corr_df |> filter(score == 'factor'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+      } else {
+        p <- p + geom_text(data = corr_df |> filter(score == 'factor'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+      }
+    }
   }
+  
   
   pass$plot <- p
   
