@@ -1,5 +1,4 @@
 library(vegan)
-library(ggrepel)
 library(patchwork)
 library(readxl)
 library(tidyverse)
@@ -12,7 +11,7 @@ auch.spe <- read_xlsx("data/LimestoneQuarries_Aucheno/Aucheno_sum.xlsx") |> #gor
   rownames_to_column(var = 'id')|>
   pivot_longer(cols = -id, names_to = 'spe_name', values_to = 'value')|>
   mutate(spe_name = str_c(str_split_i(spe_name, "\\s", 1) %>% str_sub(., 1, 3), 
-                            str_split_i(spe_name, "\\s", 2) %>% str_sub(., 1, 3), sep = ".")) |>
+                          str_split_i(spe_name, "\\s", 2) %>% str_sub(., 1, 3), sep = ".")) |>
   pivot_wider(names_from = spe_name, values_from = value) %>%
   select(-id)|>
   select(where(~sum(.x > 0) > 1)) |> # Removal of singular occurrences
@@ -47,10 +46,10 @@ gordi_read(pco.bc, spe = auch.spe, env = auch.env, correlation = T)|>
 gordi_read(pco.bc, spe = auch.spe, env = auch.env)|> #const can be set for better visualization of both species and sites
   gordi_sites(colour = 'Treatment')|>
   gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen'))|>
-  gordi_cluster(group = 'site', linetype = 'dotted')|>
+  gordi_cluster(group = 'site', linetype = 'dotted', show.legend = F)|>
   gordi_fit(slice_max = 30)|>
   gordi_species()|>
-  gordi_label(what = 'species', label_colour = 4, repel_label = T, max.overlaps = Inf)
+  gordi_label(what = 'species', label_colour = 4, repel_label = T, max.overlaps = Inf, show.legend = F)
 
 
 # Sorensen PCoA -----------------------------------------------------------
@@ -69,10 +68,10 @@ screeplot(pco.so)
 gordi_read(pco.so, spe = auch.spe, env = auch.env, correlation = T)|>
   gordi_sites(colour = 'Treatment')|>
   gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen'))|>
-  gordi_cluster(group = 'site', linetype = 'dotted')|>
+  gordi_cluster(group = 'site', linetype = 'dotted', show.legend = F)|>
   gordi_fit(slice_max = 30)|>
   gordi_species(colour = 'red', alpha = 0.5)|>
-  gordi_label(what = 'species', label_colour = 2, repel_label = T, max.overlaps = Inf, alpha = 0.5)
+  gordi_label(what = 'species', label_colour = 2, repel_label = T, max.overlaps = Inf, alpha = 0.5, show.legend = F)
 
 
 # 2 Chironomids NMDS ------------------------------------------------------
@@ -106,12 +105,12 @@ stressplot(nmds.3)
 
 #1st two ordination axis
 gordi_read(nmds.3, spe = chiro, env = chiro.env)|>
-  gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T) #so far argument hull does not work, input for cluster must be a column from env dataframe
+  gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T, show.legend = F) #so far argument hull does not work, input for cluster must be a column from env dataframe
 
 #1st and 3rd ordination axis
 
 gordi_read(nmds.3, spe = chiro, env = chiro.env, choices = c(1, 3))|>
-  gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
+  gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T, show.legend = F)
 
 #species plot
 
@@ -147,8 +146,8 @@ screeplot(pcoa, bstick = T)
 gordi_read(pcoa, spe = spe, env = head)|>
   gordi_sites(fill = 'Rs_observ', shape = 'Rs_observ')|>
   gordi_shape(scale = 'discrete', values = 21:22)|>
-  gordi_colour(scale = 'discrete', family = 'manual', fill = T, values = c(2, 3))|>
-  gordi_cluster(group = 'Rs_plot', linewidth = 0.3, arrow = T, arrow_type = 'open')
+  gordi_colour(scale = 'discrete', family = 'manual', fill = T, values = c('red', 'green'))|>
+  gordi_cluster(group = 'Rs_plot', linewidth = 0.3, arrow = T, arrow_type = 'open', show.legend = F)
 
 #ordination plot with species, coloured by dry grassland specialists
 
@@ -157,4 +156,3 @@ gordi_read(pcoa, spe = spe, env = head, scaling = 'si', correlation = T, traits 
   gordi_species(colour = 'THE_THF')|>
   gordi_colour(scale = 'discrete', family = 'manual', values = c('red', 'blue'))|>
   gordi_label(what = 'species', shortcut = 'upper.lower', shortcut_colour = 'THE_THF', repel_label = T, max.overlaps = Inf, show.legend = F)
-
