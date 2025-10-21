@@ -18,7 +18,8 @@ gordi_cluster(
   arrow_type = "open",
   arrow_length = 0.3,
   arrow_ends = "last",
-  arrow_angle = 30
+  arrow_angle = 30,
+  show.legend = TRUE
 )
 }
 \arguments{

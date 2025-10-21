@@ -18,7 +18,8 @@ gordi_label(
   nudge_x = 0,
   nudge_y = 0,
   max.overlaps = 10,
-  repel_label = FALSE
+  repel_label = FALSE,
+  show.legend = TRUE
 )
 }
 \arguments{

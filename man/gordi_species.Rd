@@ -17,7 +17,8 @@ gordi_species(
   linetype = "",
   linewidth = "",
   arrow_size = "",
-  repel_label = FALSE
+  repel_label = FALSE,
+  show.legend = TRUE
 )
 }
 \arguments{
