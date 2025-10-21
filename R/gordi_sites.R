@@ -58,7 +58,8 @@ gordi_sites <- function(pass,
                         shape = '',
                         size = '',
                         colour = '',
-                        repel_label = F) {
+                        repel_label = F,
+                        show.legend = TRUE) {
   
   # axis names
   names(pass$site_scores) <- paste0("Axis_site", 1:2)
@@ -191,7 +192,7 @@ gordi_sites <- function(pass,
       const_args_point$stroke <- stroke} else {const_args_point$stroke <- 0.5}}  
   
   # plot  
-  p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df), const_args_point))
+  p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = site_df, show.legend = show.legend), const_args_point))
  
   if (isTRUE(label) && is.null(pass$env)){
     warning("`env` data is not provided. Drawing default labels for sites (row numbers). If you want to use other site labels, please specify 'env' in `gordi_read` (e.g. gordi_read(env = env)), eventually combined with `gordi_label`.")
@@ -201,9 +202,9 @@ gordi_sites <- function(pass,
     message("Labels have been drawn. To customize labels, please use `gordi_label()` right after `gordi_sites()`.")
     labcol <- names(site_df)[1]
     if (isTRUE(repel_label)){
-      p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black') 
+      p <- p + geom_text_repel(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black', show.legend = show.legend) 
     } else {
-      p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black')
+      p <- p + geom_text(data = site_df, aes(Axis_site1, Axis_site2, label = !!sym(labcol)), colour = 'black', show.legend = show.legend)
     }
   } else if(is.character(label)){
       warning("`label` must be logical (TRUE/FALSE). To customize labels please use `gordi_label()` right after `gordi_sites()`. Ignoring `label` input, setting `label = FALSE`.")

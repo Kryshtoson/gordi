@@ -51,7 +51,8 @@ gordi_cluster <- function(pass,
                           arrow_type = 'open',
                           arrow_length = 0.3,
                           arrow_ends = 'last',
-                          arrow_angle = 30
+                          arrow_angle = 30,
+                          show.legend = TRUE
 ){
   
   site_df <- bind_cols(pass$site_scores, pass$env)
@@ -142,7 +143,7 @@ gordi_cluster <- function(pass,
     #   )
     # }
     # p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, linetype = linetype, linewidth = linewidth))
-    p <- p + do.call(geom_path, c(list(mapping = do.call(aes, aes_args), data = site_df, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE), const_args))
+    p <- p + do.call(geom_path, c(list(mapping = do.call(aes, aes_args), data = site_df, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE, show.legend = show.legend), const_args))
     #  p <- p + geom_path(data = site_df, mapping = mapping, colour = if (const_colour) colour else NULL, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE)
   }
   
@@ -171,10 +172,10 @@ gordi_cluster <- function(pass,
       if(!identical(colour, '')) {
         const_args$colour <- colour} else {const_args$colour <- 1}}
     
-    p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, linetype = linetype, linewidth = linewidth))
+    p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, linetype = linetype, linewidth = linewidth, show.legend = show.legend))
   }
   if (isTRUE(label) && isTRUE(spider) && !identical(cluster, '')){
-    p <- p + geom_label(data = centroids, mapping = aes(x = .data[['.xc']], y = .data[['.yc']], label = .data[[cluster]]), inherit.aes = F)
+    p <- p + geom_label(data = centroids, mapping = aes(x = .data[['.xc']], y = .data[['.yc']], label = .data[[cluster]]), inherit.aes = F, show.legend = show.legend)
   }
   
   pass$plot <- p 

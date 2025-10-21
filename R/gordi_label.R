@@ -84,7 +84,8 @@ gordi_label <- function(pass,
                         nudge_x = 0,
                         nudge_y = 0,
                         max.overlaps = 10,
-                        repel_label = FALSE){ #if TRUE -> geom_text_repel
+                        repel_label = FALSE, #if TRUE -> geom_text_repel
+                        show.legend = TRUE){ 
   
   
   if (missing(what)){
@@ -282,8 +283,8 @@ gordi_label <- function(pass,
       #if (map_label_size) mapping$size <- sym(size)
       
       if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, 
-                                                        size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+                                                        size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else p <- p + geom_text(data = spe_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
     } #constant colour scale
     else {
       col_const <- if (const_label_colour) label_colour
@@ -297,8 +298,8 @@ gordi_label <- function(pass,
       )
       mapping <- do.call(ggplot2::aes, aes_args)
       
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else                     p <- p + geom_text(data = spe_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
       
     }
   }
@@ -360,8 +361,8 @@ gordi_label <- function(pass,
       
       # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol), colour = !!sym(label_colour))
       if (isTRUE(repel_label)) 
-        p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else p <- p + geom_text(data = site_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black' #if not specified label_colour it will be black
       
@@ -373,8 +374,8 @@ gordi_label <- function(pass,
       mapping <- do.call(ggplot2::aes, aes_args)
       
      # mapping <- aes(Axis_site1, Axis_site2, label = !!sym(labcol))
-      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
+      if (isTRUE(repel_label)) p <- p + geom_text_repel(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else p <- p + geom_text(data = site_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
     }
   }
   
@@ -437,8 +438,8 @@ gordi_label <- function(pass,
       
       # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol), colour = !!sym(label_colour))
       if(isTRUE(repel_label))
-        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else p <- p + geom_text(data = pred_df, mapping = mapping, size = size, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
     } else {
       col_const <- if (const_label_colour) label_colour else 'black'
       
@@ -451,8 +452,8 @@ gordi_label <- function(pass,
       
      # mapping <- aes(Axis_pred1*coef, Axis_pred2*coef, label = !!sym(labcol))
       if (isTRUE(repel_label))
-        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps)
-      else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y)
+        p <- p + geom_text_repel(data = pred_df, mapping = mapping, size = size, colour = col_const, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, max.overlaps = max.overlaps, show.legend = show.legend)
+      else p <- p + geom_text(data = pred_df, mapping = mapping, colour = col_const, size = size, alpha = if (const_alpha) as.numeric(alpha) else 1, nudge_x = nudge_x, nudge_y = nudge_y, show.legend = show.legend)
     }
   }
   

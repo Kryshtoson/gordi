@@ -81,7 +81,8 @@ gordi_species <- function(pass,
                           linetype = '',
                           linewidth = '',
                           arrow_size = '',
-                          repel_label = FALSE) {
+                          repel_label = FALSE,
+                          show.legend = TRUE) {
   
   ### axis names used in spe_df 
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
@@ -296,23 +297,23 @@ gordi_species <- function(pass,
   
   if (is.null(symbol) || any(symbol == "default")) {
     if (pass$type %in% c('CA', 'CCA', 'DCA', 'NMDS')) {
-      p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+      p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df, show.legend = show.legend), const_args_point))
     } else {
-      p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+      p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment), show.legend = show.legend), const_args_segment))
     }
   } else if (symbol == 'point') {
-    p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df), const_args_point))
+    p <- p + do.call(geom_point, c(list(mapping = do.call(aes, aes_args_point), data = spe_df, show.legend = show.legend), const_args_point))
   } else if (symbol == 'arrow') {
-    p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment)), const_args_segment))
+    p <- p + do.call(geom_segment, c(list(data = spe_df, mapping = do.call(aes, aes_args_segment), show.legend = show.legend), const_args_segment))
   }
 
   # 
   if (isTRUE(label)){
     message("Labels have been drawn. To customize labels, please use `gordi_label()` right after `gordi_sites()`.")
     if (isTRUE(repel_label)){
-      p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black') 
+      p <- p + geom_text_repel(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black', show.legend = show.legend) 
     } else {
-      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black')
+      p <- p + geom_text(data = spe_df, aes(Axis_spe1, Axis_spe2, label = species_names), colour = 'black', show.legend = show.legend)
     }
   } else if(is.character(label)){
     warning("`label` must be logical (TRUE/FALSE). To customize labels please use `gordi_label()` right after `gordi_sites()`. Ignoring `label` input, setting `label = FALSE`.")
