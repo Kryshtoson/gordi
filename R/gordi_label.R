@@ -70,6 +70,13 @@
 #'    gordi_label(what = 'sites', label = 'elevation', label_colour = 'green')
 #'
 #' @seealso [gordi_read()], [gordi_species()], [gordi_sites()], [gordi_colour()],[gordi_predict()], [ggplot2::ggplot()], [ggrepel::geom_text_repel()] 
+#' @importFrom ggplot2 ggplot aes geom_text theme_bw labs theme element_text ggplot_build
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom dplyr bind_cols left_join mutate pull join_by
+#' @importFrom purrr discard map_chr
+#' @importFrom stringr str_replace_all str_squish str_split str_detect regex str_sub str_to_title str_to_lower str_c
+#' @importFrom rlang sym .data has_name
+#' @importFrom ggnewscale new_scale_colour
 #' @export
 gordi_label <- function(pass,
                         what = c('species', 'sites', 'predictor'), #choose type of label
