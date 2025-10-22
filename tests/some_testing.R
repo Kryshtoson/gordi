@@ -74,12 +74,12 @@ m <- metaMDS(sqrt(dune))
 
 gordi_read(m, env = dune.env, scaling = 'species') |> 
   gordi_corr(variables = c('A1', 'Use'), permutations = 99, 
-             shape = 22, colour = 'variable', fill = 'variable',
+             shape = 25, colour = 'variable', fill = 'variable',
              label = 'covariate',
-             show_label = T, repel_label = F,
-             scaling_coefficient = 10) |> 
-  gordi_colour(fill = F, scale = 'discrete', family = 'manual', values = c('blue', 'black', 'black', 'black')) |> 
-  gordi_colour(fill = T, scale = 'discrete', family = 'manual', values = c('red', 'red', 'red'))
+             show_label = T, repel_label = T,
+             scaling_coefficient = 10, size = 4) |> 
+  gordi_colour(fill = F, scale = 'discrete', family = 'manual', values = c('lightblue3', 'darkorange')) |> 
+  gordi_colour(fill = T, scale = 'discrete', family = 'manual', values = c('limegreen'))
 
 
 #

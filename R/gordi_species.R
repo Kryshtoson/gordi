@@ -90,7 +90,7 @@ gordi_species <- function(pass,
   
   ### ordination types -> later used in axis labels 
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
-  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 1), "%)")}
   
   ### plot
   # Creates blank plot if this function is used as the first one after gordi_read()

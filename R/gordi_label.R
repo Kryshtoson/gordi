@@ -112,7 +112,7 @@ gordi_label <- function(pass,
   names(pass$species_scores) <- paste0("Axis_spe", 1:2)
   
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
-  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 1), "%)")}
 
   
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
