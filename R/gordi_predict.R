@@ -171,7 +171,7 @@ gordi_predict <- function(
   
   
   ### --- INTERACTION TERMS ---
-  if (length(factor_predictors) > 1 && grepl(':|\\*', as.character(m$call$formula)[3])) {
+  if (length(factor_predictors) > 1 && grepl(':|\\*', as.character(pass$m$call$formula)[3])) {
     
     # categorical variables in interaction
     # pre extract arguments
