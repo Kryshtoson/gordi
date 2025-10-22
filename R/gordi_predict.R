@@ -105,39 +105,6 @@ gordi_predict <- function(
   
   
   
-  ### plot
-  # Creates blank plot if this function is used as the first one after gordi_read()
-  # or passes already existing plot
-  
-  if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
-    p <- ggplot() +
-      theme_bw() +
-      labs(x = actual_labs[1], y = actual_labs[2]) +
-      theme(
-        text = element_text(size = 15),
-        panel.grid = element_blank(),
-        legend.justification = c(1, 1))
-  } else {p <- pass$plot}
-  
-  ### create factor_scores and vector_scores
-  # containing only scores for vector predictors - to be plotted as arrows
-  # and only scores for factor predictors - to be plotted as points
-  
-  # get names of categorical predictors
-  factor_predictors <- names(pass$m$terminfo$xlev)
-  
-  # get names of continuous predictors
-  vector_predictors <- names(pass$m$terminfo$ordered) |> 
-    discard(~ .x %in% names(pass$m$terminfo$xlev))
-  
-  # get names of ordered categorical predictors (it might not be used, idk)
-  ordered_factors <- pass$m$terminfo$ordered |> 
-    keep(~ .x) |> 
-    names()
-  
-  
-  
-  
   ### --- MAIN TERMS ---
   # create a tibble with centroid scores
   if (length(factor_predictors) > 0) {
@@ -227,6 +194,41 @@ gordi_predict <- function(
   pass$predictor_scores <- pred_df
   
   # interaction terms???
+  
+  
+  
+  
+  ### --- PLOT ---
+  # Creates blank plot if this function is used as the first one after gordi_read()
+  # or passes already existing plot
+  
+  if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
+    p <- ggplot() +
+      theme_bw() +
+      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      labs(x = actual_labs[1], y = actual_labs[2]) +
+      theme(
+        text = element_text(size = 15),
+        panel.grid = element_blank(),
+        legend.justification = c(1, 1))
+  } else {p <- pass$plot}
+  
+  ### create factor_scores and vector_scores
+  # containing only scores for vector predictors - to be plotted as arrows
+  # and only scores for factor predictors - to be plotted as points
+  
+  # get names of categorical predictors
+  factor_predictors <- names(pass$m$terminfo$xlev)
+  
+  # get names of continuous predictors
+  vector_predictors <- names(pass$m$terminfo$ordered) |> 
+    discard(~ .x %in% names(pass$m$terminfo$xlev))
+  
+  # get names of ordered categorical predictors (it might not be used, idk)
+  ordered_factors <- pass$m$terminfo$ordered |> 
+    keep(~ .x) |> 
+    names()
   
   
   ### Detect mapped vs constant aesthetics
@@ -335,9 +337,9 @@ gordi_predict <- function(
   
   if (isTRUE(label)){
     if (isTRUE(repel_label)){
-      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 2)
+      p <- p + ggrepel::geom_text_repel(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = colour)
     } else {
-      p <- p + geom_text(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = 2)
+      p <- p + geom_text(data = pred_df |> filter(score == 'biplot'), aes(Axis_pred1 * coef, Axis_pred2 * coef, label = predictor_level), colour = colour)
     }
   }
   

@@ -12,48 +12,52 @@
 #' - `what = 'sites'` -> site labels at site scores
 #' - `what = 'predictor'` -> predictor labels at predictor scores (position is adjusted by `scaling_coefficient`)
 #' 
-#' **Label source:**
+#' \strong{Label source:}
 #' If `shortcut` is not used, labels are taken from `label` (column name). If `label` stays empty, the defaults are:
-#' - species -> the first column of `spe_df` (species_names)
-#' - sites -> the first column of `site_df`
-#' - predictor -> the first column of `pass$predictor_names`
-#' If `shortcut` is defined (only works for `what = 'species'`), the function creates a label strings from genus and species (also subspecies, when present in the dataset) using the requested case and separator.
+#' \itemize{
+#'    \item{species -> the first column of \code{pass$species_names} (species_names)}
+#'    \item{sites -> the first column of \code{pass$env}}
+#'    \item{predictor -> the first column of \code{pass$pred_df}}
+#' If `shortcut` is defined (only works for \code{what = 'species'}), the function creates a label strings from genus and species (also subspecies, when present in the dataset) using the requested case and separator.
+#' }
 #' 
-#' **Colour control:**
+#' \strong{Colour control:}
 #' If `label_colour` or `shortcut_colour` is a column name in the relevant data frame, the colour is mapped and a fresh colour scale is created with [ggnewscale::new_scale_colour()], so you can apply [gordi_colour()].
 #' If `label_colour` or `shortcut_colour` is a constant (hex or colour name or colour number), the constant colour is used directly and no new colour scale is created.
 #' 
-#' **Shortcut options:**
-#' If the species name is *Stipa eriocaulis*
-#' - `'upper.lower'` -> Sti.eri 
-#' - `'lower.lower'` -> sti.eri 
-#' - `'upper.upper'` -> Sti.Eri 
-#' - `'upperupper'` -> StiEri 
-#' - `'upper_lower'` -> Sti_eri 
-#' - `'lower_lower'` -> sti_eri 
-#' - `'upper_upper'` -> Sti_Eri 
-#' - `'upper-lower'` -> Sti-eri 
-#' - `'lower-lower'` -> sti-eri 
-#' - `'upper-upper'` -> Sti-Eri 
-#' - `'upper*lower'` -> Sti*eri 
-#' - `'lower*lower'` -> sti*eri 
-#' - `'upper*upper'` -> Sti*Eri 
+#' \strong{Shortcut options:}
+#' If the species name is \emph{Stipa eriocaulis}
+#' \itemize{
+#'    \item{'upper.lower' -> Sti.eri}
+#'    \item{'lower.lower' -> sti.eri}
+#'    \item{'upper.upper' -> Sti.Eri} 
+#'    \item{'upperupper' -> StiEri}
+#'    \item{'upper_lower' -> Sti_eri}
+#'    \item{'lower_lower' -> sti_eri}
+#'    \item{'upper_upper' -> Sti_Eri}
+#'    \item{'upper-lower' -> Sti-eri}
+#'    \item{'lower-lower' -> sti-eri}
+#'    \item{'upper-upper' -> Sti-Eri}
+#'    \item{'upper*lower' -> Sti*eri} 
+#'    \item{lower*lower' -> sti*eri}
+#'    \item{'upper*upper' -> Sti*Eri} 
+#' }
 #' 
 #' @param pass A list object produced by [gordi_read()]
-#' @param what Character; which labels to draw/edit: one of `'species'`, `'sites'`, `'predictor'`.
-#' @param label Character; a column in env dataframe for sites or column name in env table for predictors are used for site and predictor labels, species name are column names from spe table - this cannot be changed.
+#' @param what Character; which labels to draw/edit: one of \code{c('species', 'sites', 'predictor')}.
+#' @param label Character; a column in env dataframe for sites or column name in env table for predictors are used for site and predictor labels, species name are column of names from \code{pass$species_name} - this cannot be changed.
 #' @param label_colour Character; colour for non-shortcut labels (constant or column name).
-#' @param shortcut Character; creates shortcuts of species names (for `what = 'species'` only).
+#' @param shortcut Character; creates shortcuts of species names (for \code{what = 'species'} only).
 #' @param shortcut_colour Character; colour for shortcut labels (constant or column name).
 #' @param shortcut_length Integer; number of letters to take from genus/species for shortcuts.
-#' @param size Numeric; text size in mm (as in `ggplot::geom_text()`). Default size = 3.9.
-#' @param scaling_coefficient Numeric; used to adjust predictor label positions. For more information see [gordi_predict()].
-#' @param nudge_x Numeric; offset on x axis for label position. (passed to [ggplot::geom_text()] or [geom_text_repel()]).
-#' @param nudge_y Numeric; offset on y axis for label position (passed to [ggplot::geom_text()] or [geom_text_repel()]).
-#' @param max.overlaps Integer; maximum allowed overlaps for labels (when `repel_label = TRUE`). Details in [geom_text_repel()]. Default `max.overlaps = 10`
-#' @param repel_label Logical; whether to use `geom_text_repel` instead of `geom_text()`.
+#' @param size Numeric; text size in mm (as in \code{\link[ggplot2]{geom_text}}. Default size = 3.9.
+#' @param scaling_coefficient Numeric; used to adjust predictor label positions. For more information see \code{\link{gordi_predict}}.
+#' @param nudge_x Numeric; offset on x axis for label position. (passed to \code{\link[ggplot2]{geom_text}} or \code{\link[ggrepel]{geom_text_repel}}).
+#' @param nudge_y Numeric; offset on y axis for label position (passed to \code{\link[ggplot2]{geom_text}} or \code{\link[ggrepel]{geom_text_repel}}).
+#' @param max.overlaps Integer; maximum allowed overlaps for labels (when \code{repel_label = TRUE}). Details in \code{\link[ggrepel]{geom_text_repel}}. Default \code{max.overlaps = 10}
+#' @param repel_label Logical; whether to use \code{\link[ggrepel]{geom_text_repel}} instead of \code{\link[ggplot2]{geom_text}}.
 #' 
-#' @return The updated `pass` object with label layers added to `pass$plot`.
+#' @return The updated \code{pass} object with label layers added to \code{pass$plot}.
 #'
 #' @examples
 #' # species labels, black coloured text, default size
@@ -114,6 +118,8 @@ gordi_label <- function(pass,
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
     p <- ggplot() +
       theme_bw() +
+      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
       labs(x = actual_labs[1], y = actual_labs[2]) +
       theme(
         text = element_text(size = 15),

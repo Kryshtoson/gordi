@@ -15,6 +15,26 @@ read_csv('data/schrankogel/schrankogel_spe.csv') |>
 
 
 
+# gordi_predict - interactions --------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # gordi_read problem ------------------------------------------------------
 
 auch <- read_excel('C:/Users/User/Documents/R/Gordi_in_community_data_analysis/data/LimestoneQuarries_Aucheno/Aucheno_sum.xlsx')

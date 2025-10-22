@@ -72,6 +72,8 @@ gordi_sites <- function(pass,
   if (is.null(pass$plot)) { 
     p <- ggplot2::ggplot() +
       theme_bw() +
+      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
       labs(x = actual_labs[1], y = actual_labs[2]) +
       ggplot2::theme(
         text = element_text(size = 15),
