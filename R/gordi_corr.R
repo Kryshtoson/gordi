@@ -1,8 +1,10 @@
-#' Correlate Environmental Variables with Ordination Axes and Plot
+#' Correlate Environmental Variables with Ordination Axes
 #'
 #' @description
 #' Passively fits environmental variables (vectors for numeric, centroids for factors) onto
-#' the current ordination plot stored in `pass$plot` using \code{\link[vegan]{envfit}}.
+#' the current ordination plot stored in \code{pass$plot} using \code{\link[vegan]{envfit}}. 
+#' If the number of permutations is provided, it can also calculate R2, p-values (or adjusted p-values)
+#' for the correlation. These values are then stored in \code{pass$corr_stats}.
 #'
 #' @details
 #' The function calculates the correlation scores (vectors and factor centroids)
@@ -16,20 +18,23 @@
 #'
 #' Aesthetic arguments (\code{colour}, \code{fill}, \code{alpha}, etc.) can be set in two ways:
 #' \enumerate{
-#'   \item \strong{Mapping:} If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
+#'   \item \strong{Mapping:} If the argument matches a column name in the internal \code{pass$corr_coords} data frame (e.g., 'covariate', 'variable_level', 'variable'), the aesthetic is mapped to that variable.
 #'   \item \strong{Constant:} Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
 #' }
 #'
 #' Use \code{\link{gordi_colour}()} or \code{\link{gordi_shape}()} or other similar functions immediately after \code{gordi_corr()}
-#' to define custom legends and scales for mapped aesthetics.
+#' to define custom legends and scales for mapped aesthetics. If you want to change `fill`, use \code{gordi_colour(fill = T)}.
 #'
 #' @param pass A list object produced by \code{\link{gordi_read}()} and containing the ordination results (\code{pass$m}) and environmental data (\code{pass$env}).
 #' @param variables Character vector; names of the environmental variables (columns in \code{pass$env}) to fit onto the ordination. Required.
 #' @param permutations Numeric; The number of permutations to use for significance testing with \code{\link[vegan]{envfit}}. Set to 0 to skip testing. Default is 0 (no test).
-#' @param p_val_adjust Logical; Should p-values be adjusted for multiple comparisons? Uses an internal wrapper around \code{\link[stats]{p.adjust}}. Default is \code{TRUE}.
+#' @param p_val_adjust Logical; Should p-values be adjusted for multiple comparisons? Uses an internal wrapper by David Zelený around \code{\link[stats]{p.adjust}}, called \code{p.adjust.envfit}. Default is \code{TRUE}.
 #' @param p_val_adjust_method Character; The method for p-value adjustment. See \code{\link[stats]{p.adjust}}. Default is 'bonferroni'.
-#' @param strata Passed to \code{\link[vegan]{envfit}}; grouping variable for permutations.
-#' @param colour Aesthetic; A column name to map to the colour of vectors (line) and factor centroids (point outline), or a constant colour.
+#' @param strata Grouping variable for permutations. See details in \code{\link[vegan]{envfit}}.
+#' @param label Character; The column from \code{pass$corr_coords} to use for the text labels. Must be one of 'covariate', 'variable_level', or 'variable'. Default is 'covariate'.
+#' @param show_label Logical; If \code{TRUE}, plot text labels for the vectors and factor centroids. Default is \code{FALSE}.
+#' @param repel_label Logical; If \code{TRUE} (and \code{show_label} is \code{TRUE}), use \code{\link[ggrepel]{geom_text_repel}} to prevent label overlap. Default is \code{FALSE}.
+#' @param colour Aesthetic; A column name to map to the colour of vectors (line) and factor centroids (point or point outline for shapes 21-25), or a constant colour.
 #' @param fill Aesthetic; A column name to map to the fill colour of factor centroids (only works with shapes 21-25), or a constant colour.
 #' @param alpha Aesthetic; A column name to map to transparency, or a constant numeric value (0 to 1).
 #' @param linetype Aesthetic; A column name to map to linetype (vectors only), or a constant linetype (e.g., 1, 2, 'dotted', 'dashed').
@@ -42,24 +47,33 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Example data setup (assuming 'ord_model' and 'env_data' exist)
-#' pass <- gordi_read(ord_model, env_data)
+#' data(dune)
+#' data(dune.env)
+#' 
+#' m <- capscale(sqrt(dune) ~ 1)
+#' 
+#' # 1. Plot correlated variables
+#' gordi_read(m, env = dune.env) |> 
+#'   gordi_corr(variables = c('A1', 'Management', 'Use'))
+#' 
+#' # 2. Check stats
+#' o <- gordi_read(m, env = dune.env) |> 
+#'   gordi_corr(variables = c('A1', 'Management', 'Use'))    
+#'   
+#' o$corr_stats
 #'
-#' # 1. Simple plot with default aesthetics
-#' pass |>
-#'   gordi_corr(variables = c('pH', 'elevation', 'soil_type'))
-#'
-#' # 2. Map vector colour to r2 (Continuous) and factor colour to 'covariate' (Discrete)
-#' # Note: For separate legends, use gordi_colour after gordi_corr.
-#' pass |>
-#'   gordi_corr(variables = c('pH', 'soil_type'), colour = 'type', permutations = 999) |>
-#'   gordi_colour(scale = 'discrete', name = 'Variable Type', values = c('vector'='black', 'factor'='red'))
+#' # 3. Map colour to 'covariate' (Discrete)
+#' gordi_read(m, env = dune.env) |> 
+#'   gordi_corr(variables = c('A1', 'Management', 'Use'), colour = 'covariate') |> 
+#'   gordi_colour(scale = 'discrete', family = 'viridis')
 #' }
 #' @importFrom vegan envfit scores
-#' @importFrom dplyr as_tibble bind_rows mutate
-#' @importFrom ggplot2 ggplot theme_bw labs theme element_text element_blank arrow unit aes geom_segment geom_point
+#' @importFrom dplyr as_tibble bind_rows mutate select starts_with relocate
+#' @importFrom ggplot2 ggplot theme_bw labs theme element_text element_blank arrow unit aes geom_segment geom_point geom_text
+#' @importFrom ggrepel geom_text_repel
 #' @importFrom tibble tibble
-#' @importFrom rlang sym
+#' @importFrom rlang sym expr
+#' @importFrom stringr str_replace
 #' @export
 gordi_corr <- function(
     pass,
@@ -68,21 +82,25 @@ gordi_corr <- function(
     p_val_adjust = TRUE,
     p_val_adjust_method = 'bonferroni',
     strata = NULL,
-    label = F,
-    colour = '', 
-    fill = '', 
+    scaling_coefficient = 0.9,
+    label = c('covariate', 'variable_level', 'variable'),
+    show_label = F,
+    repel_label = F,
+    colour = '',
+    fill = '',
     alpha = '',
     linetype = '',
     linewidth = '',
     shape = '',
     size = '',
-    arrow_size = 0.3,
-    repel_label = F) {
+    arrow_size = 0.3) {
   
   if(is.null(variables) || length(variables) == 0 || (length(variables) == 1 && identical(variables, ''))) {
     stop('You must provide at least one variable you want to fit to the ordination.')}
   
   if(permutations == 0) {warning('You did not specify the number of permutations. No p-values were computed.')}
+  
+  label <- match.arg(label)
   
   # ---- Helper function by D. Zeleny: p.adjust.envfit ----
   # Function p.adjust.envfit
@@ -112,14 +130,14 @@ gordi_corr <- function(
   
   # fit environmental variables onto ordination 
   ef <- envfit(ord = pass$m,
-               env = pass$env[ , variables, drop = FALSE],
+               env = pass$env[, variables, drop = FALSE],
                permutations = permutations,
                strata = strata,
                choices = pass$choices)
   if (p_val_adjust) {
     ef <- p.adjust.envfit(ef, method = p_val_adjust_method)
   } else {
-    warning ('Significance values were not adjusted')
+    warning ('Significance values were not adjusted.')
   }
   
   
@@ -221,7 +239,7 @@ gordi_corr <- function(
   # --- Ordination axis labels ---
   
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
-  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 1), "%)")}
   
   
   
@@ -232,10 +250,10 @@ gordi_corr <- function(
   
   ### create corr_df which is then called in the ggplot
   corr_df <- pass$corr_coords |> 
-    select(Axis_corr1, Axis_corr2, score, label = covariate, variable_level, variable)
+    select(Axis_corr1, Axis_corr2, score, covariate, variable_level, variable)
   
   pass$corr_coords <- pass$corr_coords |> 
-    select(Axis_corr1, Axis_corr2, score, label = covariate, variable_level, variable)
+    select(Axis_corr1, Axis_corr2, score, covariate, variable_level, variable)
   
   
   ### plot
@@ -245,6 +263,8 @@ gordi_corr <- function(
   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
     p <- ggplot() +
       theme_bw() +
+      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
       labs(x = actual_labs[1], y = actual_labs[2]) +
       theme(
         text = element_text(size = 15),
@@ -255,12 +275,12 @@ gordi_corr <- function(
   
   ### Detect mapped vs constant aesthetics
   # colour
-  # if colour != "" AND ALSO colour represents a colname present in spe_df, then map_colour is TRUE, otherwise is FALSE
-  map_colour <- !identical(colour, '') && has_name(corr_df, colour) 
+  # if colour != "" AND ALSO colour represents a colname present in corr_df, then map_colour is TRUE, otherwise is FALSE
+  map_colour <- !identical(colour, '') && (colour %in% names(corr_df))
   # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
   const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
   # fill
-  map_fill <- !identical(fill, '') && has_name(corr_df, fill)
+  map_fill <- !identical(fill, '') && (fill %in% names(corr_df))
   const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours()) || (is.character(fill) && fill %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
   # alpha
   map_alpha <- !identical(alpha, '') && has_name(corr_df, alpha)
@@ -278,14 +298,32 @@ gordi_corr <- function(
   map_size <- !identical(size, '') && has_name(corr_df, size)
   const_size <- !map_size && is.numeric(size)
   
+  ### Set scaling coefficient
+  # extract plot frame size (x and y axis lengths)
+  if (!is.null(vec_tbl)) {
+    p_build <- ggplot_build(p)
+    
+    plot_range <- c(xmin_plot = p_build$layout$panel_params[[1]]$x.range[1],
+                    xmax_plot = p_build$layout$panel_params[[1]]$x.range[2],
+                    ymin_plot = p_build$layout$panel_params[[1]]$y.range[1],
+                    ymax_plot = p_build$layout$panel_params[[1]]$y.range[2])
+    
+    corr_range <- c(xmin_pred = min(corr_df[corr_df$score == 'vector',1]),
+                    xmax_pred = max(corr_df[corr_df$score == 'vector',1]),
+                    ymin_pred = min(corr_df[corr_df$score == 'vector',2]),
+                    ymax_pred = max(corr_df[corr_df$score == 'vector',2]))
+    
+    coef <- (max(abs(plot_range)) / max(abs(corr_range))) * scaling_coefficient
+  } else {coef <- 1}
   
   
   ### Prepare aes arguments for geom_segment()
   # Start with fixed x/y for the base (0,0) and end at the species scores
   aes_args_segment <- list(
     x = 0, y = 0,
-    xend = sym("Axis_corr1"),
-    yend = sym("Axis_corr2"))
+    xend = expr(Axis_corr1 * !!coef),
+    yend = expr(Axis_corr2 * !!coef)
+  )
   
   if(map_colour) aes_args_segment$colour <- sym(colour)
   if(map_alpha) aes_args_segment$alpha <- sym(alpha)
@@ -299,7 +337,7 @@ gordi_corr <- function(
   # Add constant arguments for geom_segment() if not mapped
   # colour
   if(!map_colour){
-    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 'gray62'}}
+    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 'gray20'}}
   # alpha
   if(!map_alpha){
     if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 1}}
@@ -325,11 +363,37 @@ gordi_corr <- function(
                             mapping = do.call(aes, aes_args_segment)),
                        const_args_segment)) 
     
-    if (isTRUE(label)){
-      if (isTRUE(repel_label)){
-        p <- p + ggrepel::geom_text_repel(data = corr_df |> filter(score == 'vector'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
-      } else {
-        p <- p + geom_text(data = corr_df |> filter(score == 'vector'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+    if (isTRUE(show_label)){
+      
+      aes_args_text <- list(
+        x = expr(Axis_corr1 * !!coef),
+        y = expr(Axis_corr2 * !!coef),
+        label = sym(label)
+      )
+      
+      if(map_colour) aes_args_text$colour <- sym(colour)
+      if(map_alpha) aes_args_text$alpha <- sym(alpha)
+      
+      ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
+      const_args_text <- list(
+        show.legend = F
+      )
+
+      if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
+      if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
+      
+      
+        if (isTRUE(repel_label)){
+        p <- p + do.call(ggrepel::geom_text_repel,
+                           c(list(data = corr_df |> filter(score == 'vector'),
+                                  mapping = do.call(aes, aes_args_text)),
+                             const_args_text))
+          
+        } else {
+        p <- p + do.call(geom_text,
+                         c(list(data = corr_df |> filter(score == 'vector'),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
       }
     }
   }
@@ -366,16 +430,43 @@ gordi_corr <- function(
   
   # add to plot
   if (!is.null(corr_df |> filter(score == 'factor'))) {
+    
     p <- p + do.call(geom_point,
                      c(list(data = corr_df |> filter(score == 'factor'),
                             mapping = do.call(aes, aes_args_point)),
                        const_args_point)) 
     
-    if (isTRUE(label)){
+    
+    if (isTRUE(show_label)){
+      
+      aes_args_text <- list(
+        x = sym("Axis_corr1"),
+        y = sym("Axis_corr2"),
+        label = sym(label)
+      )
+      
+      if(map_colour) aes_args_text$colour <- sym(colour)
+      if(map_alpha) aes_args_text$alpha <- sym(alpha)
+      
+      ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
+      const_args_text <- list(
+        show.legend = F
+      )
+      
+      if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
+      if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
+      
+      
       if (isTRUE(repel_label)){
-        p <- p + ggrepel::geom_text_repel(data = corr_df |> filter(score == 'factor'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+        p <- p + do.call(ggrepel::geom_text_repel,
+                         c(list(data = corr_df |> filter(score == 'factor'),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
       } else {
-        p <- p + geom_text(data = corr_df |> filter(score == 'factor'), aes(Axis_corr1, Axis_corr2, label = variable_level), colour = 'gray62')
+        p <- p + do.call(ggrepel::geom_text_repel,
+                         c(list(data = corr_df |> filter(score == 'factor'),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
       }
     }
   }

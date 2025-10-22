@@ -2,7 +2,7 @@
 % Please edit documentation in R/gordi_corr.R
 \name{gordi_corr}
 \alias{gordi_corr}
-\title{Correlate Environmental Variables with Ordination Axes and Plot}
+\title{Correlate Environmental Variables with Ordination Axes}
 \usage{
 gordi_corr(
   pass,
@@ -11,7 +11,10 @@ gordi_corr(
   p_val_adjust = TRUE,
   p_val_adjust_method = "bonferroni",
   strata = NULL,
-  label = F,
+  scaling_coefficient = 0.9,
+  label = c("covariate", "variable_level", "variable"),
+  show_label = F,
+  repel_label = F,
   colour = "",
   fill = "",
   alpha = "",
@@ -19,8 +22,7 @@ gordi_corr(
   linewidth = "",
   shape = "",
   size = "",
-  arrow_size = 0.3,
-  repel_label = F
+  arrow_size = 0.3
 )
 }
 \arguments{
@@ -30,13 +32,19 @@ gordi_corr(
 
 \item{permutations}{Numeric; The number of permutations to use for significance testing with \code{\link[vegan]{envfit}}. Set to 0 to skip testing. Default is 0 (no test).}
 
-\item{p_val_adjust}{Logical; Should p-values be adjusted for multiple comparisons? Uses an internal wrapper around \code{\link[stats]{p.adjust}}. Default is \code{TRUE}.}
+\item{p_val_adjust}{Logical; Should p-values be adjusted for multiple comparisons? Uses an internal wrapper by David Zelený around \code{\link[stats]{p.adjust}}, called \code{p.adjust.envfit}. Default is \code{TRUE}.}
 
 \item{p_val_adjust_method}{Character; The method for p-value adjustment. See \code{\link[stats]{p.adjust}}. Default is 'bonferroni'.}
 
-\item{strata}{Passed to \code{\link[vegan]{envfit}}; grouping variable for permutations.}
+\item{strata}{Grouping variable for permutations. See details in \code{\link[vegan]{envfit}}.}
 
-\item{colour}{Aesthetic; A column name to map to the colour of vectors (line) and factor centroids (point outline), or a constant colour.}
+\item{label}{Character; The column from \code{pass$corr_coords} to use for the text labels. Must be one of 'covariate', 'variable_level', or 'variable'. Default is 'covariate'.}
+
+\item{show_label}{Logical; If \code{TRUE}, plot text labels for the vectors and factor centroids. Default is \code{FALSE}.}
+
+\item{repel_label}{Logical; If \code{TRUE} (and \code{show_label} is \code{TRUE}), use \code{\link[ggrepel]{geom_text_repel}} to prevent label overlap. Default is \code{FALSE}.}
+
+\item{colour}{Aesthetic; A column name to map to the colour of vectors (line) and factor centroids (point or point outline for shapes 21-25), or a constant colour.}
 
 \item{fill}{Aesthetic; A column name to map to the fill colour of factor centroids (only works with shapes 21-25), or a constant colour.}
 
@@ -57,7 +65,9 @@ The updated \code{pass} object with the environmental correlation layers added t
 }
 \description{
 Passively fits environmental variables (vectors for numeric, centroids for factors) onto
-the current ordination plot stored in `pass$plot` using \code{\link[vegan]{envfit}}.
+the current ordination plot stored in \code{pass$plot} using \code{\link[vegan]{envfit}}. 
+If the number of permutations is provided, it can also calculate R2, p-values (or adjusted p-values)
+for the correlation. These values are then stored in \code{pass$corr_stats}.
 }
 \details{
 The function calculates the correlation scores (vectors and factor centroids)
@@ -71,26 +81,33 @@ and optionally adjusts the p-values for multiple testing.
 
 Aesthetic arguments (\code{colour}, \code{fill}, \code{alpha}, etc.) can be set in two ways:
 \enumerate{
-  \item \strong{Mapping:} If the argument matches a column name in the internal \code{corr_coords} data frame (e.g., 'covariate' or 'type'), the aesthetic is mapped to that variable.
+  \item \strong{Mapping:} If the argument matches a column name in the internal \code{pass$corr_coords} data frame (e.g., 'covariate', 'variable_level', 'variable'), the aesthetic is mapped to that variable.
   \item \strong{Constant:} Otherwise, the value is used as a constant aesthetic (e.g., \code{colour = 'red'}).
 }
 
 Use \code{\link{gordi_colour}()} or \code{\link{gordi_shape}()} or other similar functions immediately after \code{gordi_corr()}
-to define custom legends and scales for mapped aesthetics.
+to define custom legends and scales for mapped aesthetics. If you want to change `fill`, use \code{gordi_colour(fill = T)}.
 }
 \examples{
 \dontrun{
-# Example data setup (assuming 'ord_model' and 'env_data' exist)
-pass <- gordi_read(ord_model, env_data)
+data(dune)
+data(dune.env)
 
-# 1. Simple plot with default aesthetics
-pass |>
-  gordi_corr(variables = c('pH', 'elevation', 'soil_type'))
+m <- capscale(sqrt(dune) ~ 1)
 
-# 2. Map vector colour to r2 (Continuous) and factor colour to 'covariate' (Discrete)
-# Note: For separate legends, use gordi_colour after gordi_corr.
-pass |>
-  gordi_corr(variables = c('pH', 'soil_type'), colour = 'type', permutations = 999) |>
-  gordi_colour(scale = 'discrete', name = 'Variable Type', values = c('vector'='black', 'factor'='red'))
+# 1. Plot correlated variables
+gordi_read(m, env = dune.env) |> 
+  gordi_corr(variables = c('A1', 'Management', 'Use'))
+
+# 2. Check stats
+o <- gordi_read(m, env = dune.env) |> 
+  gordi_corr(variables = c('A1', 'Management', 'Use'))    
+  
+o$corr_stats
+
+# 3. Map colour to 'covariate' (Discrete)
+gordi_read(m, env = dune.env) |> 
+  gordi_corr(variables = c('A1', 'Management', 'Use'), colour = 'covariate') |> 
+  gordi_colour(scale = 'discrete', family = 'viridis')
 }
 }

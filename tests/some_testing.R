@@ -6,7 +6,6 @@ library(readxl)
 
 devtools::document()
 
-
 data(dune)
 data(dune.env)
 
@@ -54,9 +53,13 @@ scores(m,
 m <- metaMDS(sqrt(dune))
 
 gordi_read(m, env = dune.env, scaling = 'species') |> 
-  gordi_sites() |> 
-  gordi_corr(variables = c('A1', 'Use', 'Management'), p_val_adjust = T, perm = 999, label = T, colour = 'variable') |> 
-  gordi_colour(scale = 'discrete', family = 'brewer') 
+  gordi_corr(variables = c('A1', 'Use'), permutations = 99, 
+             shape = 22, colour = 'variable', fill = 'variable',
+             label = 'covariate',
+             show_label = T, repel_label = F,
+             scaling_coefficient = 10) |> 
+  gordi_colour(fill = F, scale = 'discrete', family = 'manual', values = c('blue', 'black', 'black', 'black')) |> 
+  gordi_colour(fill = T, scale = 'discrete', family = 'manual', values = c('red', 'red', 'red'))
 
 
 #
@@ -303,10 +306,11 @@ colnames(scores(m, display = 'sites', choices = 1:4))
 
 names(dune.env)
 
+m <- capscale(sqrt(dune) ~ A1 + Management*Use, distance = 'bray', sqrt.dist = T, data = dune.env)
 
 scores(m, tidy = T, correlation = T)
 
-gordi_read(m, env = dune.env, scaling = 'species', correlation = T) |> 
+gordi_read(m, env = dune.env, scaling = 'species', correlation = T, const = c(5,1)) |> 
   gordi_species() |> 
   gordi_predict(colour = 'predictor', shape = 'predictor', size = 2, label = T, repel_label = T) 
 
