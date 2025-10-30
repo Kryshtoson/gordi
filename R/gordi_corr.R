@@ -133,7 +133,11 @@ gordi_corr <- function(
                env = pass$env[, variables, drop = FALSE],
                permutations = permutations,
                strata = strata,
-               choices = pass$choices)
+               choices = pass$choices,
+               scaling = pass$scaling,
+               correlation = pass$correlation,
+               hill = pass$hill,
+               const = pass$const)
   if (p_val_adjust) {
     ef <- p.adjust.envfit(ef, method = p_val_adjust_method)
   } else {
