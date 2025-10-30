@@ -1,8 +1,8 @@
 ---
-title: "gordi"
+title: "gordi: Plot ordination diagrams with ggplot2"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{gordi_vignette}
+  %\VignetteIndexEntry{"gordi: Plot ordination diagrams with ggplot2"}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,11 +19,9 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-remotes::install_github('Kryshtoson/gordi')
 library(gordi)
-library(tidyverse)
 library(vegan)
-library(ggrepel)
+library(tidyverse)
 ```
 
 # Introduction
@@ -44,50 +42,114 @@ With `gordi`, you can:
 
 -   and have access to **ggplot2** for final polishing
 
-## General workflow
+`gordi` is still under construction and changes happen very often, so it might be beneficial, if you update the package as often as possible. Also this may be the reason for slightly different results you may obtain from `gordi` now and tomorrow. `gordi` is not on CRAN yet, as it exists only on Github. It can be installed (or updated) using this code:
 
-1.  The first step to take is to calculate an ordination. The `gordi` package is compatible with the outputs of `vegan` functions mentioned above.
+```{r eval=FALSE, include=FALSE}
+remotes::install_github('Kryshtoson/gordi')
+```
 
-> **Note**: Don't panic when you see the whole long output in console. This is the "pass" object which travels through `gordi_` functions and you can easily check if you entered the right data.
+## General Workflow
 
-Example:
+The functions in `gordi` follow some rules regarding the order in which they are called. The most important rule is, that every attempt of using `gordi` has to start with the `gordi_read()` function. The second most important rule is, that `gordi_` functions work the best if applied in a pipeline, because every function uses the output (called `pass`) of the previous one, but it also has a lot of own arguments, so the code will be unreadable very soon if you use the base R nested functions approach.
+
+The ordination analysis as a whole has basically three parts. The first consists of long-lasting and exhausting data preparation and formatting. The poor person (including you, based on the fact that you are reading these lines) usually has to synchronise the taxonomical concepts in the data set, clean it from mistakes, typos, decide what to do with some extraordinary samples and finally put the data into a format, that is acceptable by the analytical software.
+
+In the second part, the model is typically calculated. It tends to be the shortest, but the most important one.
+
+Only in the third part, which is the visualisation of the results, `gordi` comes to the word. In this vignette, we will cover the second (slightly) and the third part. The first part (data preparation) is omitted here, as it is usually highly case specific. But we will mention the format of the data which `gordi` needs to function correctly.
+
+### Steps to Success
+
+1.  The first step is calculating an ordination. The `gordi` package is compatible with the outputs of `vegan` functions mentioned above.
+
+    In this example, we will use the `dune` dataset which is available in the library `vegan` to calculate a simple constrained ordination (db-RDA). We will square-root the species data (familiarly called **spe**) to reduce the influence of the dominant species. As the predictor, we will use the `A1` variable which is available in the environmental table (often called **env**).
 
 ```{r}
 library(gordi)
+library(vegan)
+library(tidyverse)
 
-# Load example dataset
+# 1. Load example dataset
 data(dune)
 data("dune.env")
 
-# Calculate ordination
-# (here is db-RDA on the dune dataset with squarerooted coverages and squarerooted Bray-Curtis distances)
-m <- capscale(sqrt(dune) ~ A1, data = dune.env, distance = 'bray', sqrt.dist = T)
+# 2. Check if the data have the correct format
+    # e.g. species table must not contain any ID column,
+    # the number of rows in spe and env table must be the same
+glimpse(dune)
+glimpse(dune.env)
+nrow(dune) == nrow(dune.env)
+
+# 3. Calculate the ordination
+m <- capscale(sqrt(dune) ~ A1,    
+              data = dune.env,    # we have to provide env table with predictors,
+                                  # so the model knows where to look for the predictor
+              distance = 'bray',  # 'Bray-Curtis dissimilarity' - probably the most used one
+              sqrt.dist = T)      # square-rooted Bray-Curtis dissim. does not produce Imaginary Inertia,
+                                  # which is problematic, when it comes to determining how much
+                                  # variability in the data the model explained
 ```
 
-2.  The `gordi_read()` function will read the resulting object of the ordination and prepare it for use by other `gordi_` functions. That said, `gordi_read()` is always the first one in the pipeline of `gordi_` functions.
+2.  Now it is time for the first `gordi` function. `gordi_read()` reads the resulting object of the ordination (**m**) and prepares it for use by other `gordi_` functions. That said, `gordi_read()` has to always be the first one in the pipeline of `gordi_` functions.
+
+    `gordi_read()` has many arguments, which greatly influence how the final plot will look like. You can for example set here the scaling of the plot, select the ordination axes you want to look at. You can also add **env**, **spe** and **traits** data which you can later use for variable based symbolisation of sites or species in the plot or for passive projection of variables onto unconstrained ordination.
+
+    For more details regarding the arguments used in the `gordi_read()` please check the help page of the `scores()` function in the `vegan` package.
+
+    > **Note**: If you look just for the "scores", the help page will be rather laconic. For more details, you have to look for the ordination type specific `scores()` function, such as "scores.rda" or "scores.cca".
+
+    > **Note**: Don't panic when you see the whole long stuff in console. This is the `pass` object which travels through `gordi_` functions and you can easily check if you entered the right data.
 
 ```{r}
 # Print ordination result
 m
 
 # Use `gordi_read()` to read the ordination result
-obj <- m |> gordi_read()
-print(obj)
-
+m |> 
+  gordi_read(
+    choices = 1:2         # we want to look at the first two ordination axes
+    scaling = 'species'   # we want to focus on the species
+    correlation = T
+  )
 ```
 
-3.  Decide, whether you want to display 'species' or 'sites' scores. Usually it is a good practice to display only one type of scores (and choose corresponding scaling in `gordi_read()`), but it is also possible to display both score types (in this case, please select `scaling = 'symmetric'`).
+3.  At this point, you actually start plotting. The first decision often is, whether you want to display 'species' or 'sites' (samples) scores. In the previous example we decided, we want to focus on 'species' and we also set the `scaling = 'species'`.
+
+    The scaling influences how the **scores** will be calculated and it basically means, that if we set `scaling = 'species'`, that 'species' will be displayed correctly (i. e. the relative position of the arrows will correctly represent how the species "go together" - the closer, the more). This applies also for the situation when we want to look at the 'sites' (or samples) and we se `scaling = 'sites'`.
+
+    > **Note**: The word "scores" might sound unfamiliar, but don't worry, it is nothing else that the "coordinates" of each species or site in the multidimensional space of the ordination. Each species and each site has its own "score" on each ordination axis.
+
+    On the other hand, if we set `scaling = 'sites'` and then we display 'species', their relative position will be harder to interpret. But it still might be useful to look at both scores (sites and species) in one plot, but you have to have in mind, that only what you scaled for will be displayed correctly.
+
+    There is also a third, compromising option how to display both, species and site (sample) scores at once, and this is `scaling = 'symmetric'`. It basically discorts the scores of both, species and sites, but not that much as when you scale for species and display sites.
 
     -   If you have decided to display species, use `gordi_species()`
     -   If you have decided to display sites, use `gordi_sites()`
 
 ```{r}
-obj <- obj |>  # we want to display species, we choose scaling = 'species'
+m |> 
+  gordi_read(choices = 1:2, scaling = 'species', correlation = T) |> 
   gordi_species()
-
-obj
-
 ```
+    OK, good, we have a bunch of blue arrows now. Each arrow represent one species, but which one? For a quick information, we can set argument `label = T`.
+    
+```{r}
+m |> 
+  gordi_read(choices = 1:2, scaling = 'species', correlation = T) |> 
+  gordi_species(label = T)
+```
+
+    Nice. We can see, that the names of species in the `dune` data set are already shortened, so we have to do nothing more about it. In case, when the data set is not that nicely prepared and you have the whole species names in the column names in the spe table (e.g. *Achillea millefolium agg.*), the plot gets crowded rapidly. For this purposes, there is a handy function `gordi_label()` Which can create nice species names shortcuts. Check its help page.
+    
+    What else can we improve is the position of the species names, so they do not overlap each other. For this, set the argument `repel_label = T`.
+    
+```{r}
+m |> 
+  gordi_read(choices = 1:2, scaling = 'species', correlation = T) |> 
+  gordi_species(label = T, repel_label = T)
+```
+
+### TADY JSEM SKONCILA
 
 In `gordi_species()` and `gordi_sites()` you can control colour, fill, shape, and many more things regarding symbology. You can e.g. colour symbols by a variable or set colour statically (see help of aforementioned functions for details). However, if you want to further customize colours or shapes, continue to step 4.
 

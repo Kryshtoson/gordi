@@ -183,7 +183,7 @@ gordi_read(m2, env = dune.env, scaling = 'species', correlation = T) |>
 
 dune.env$Use <- as.character(dune.env$Use)
 
-
+glimpse(dune)
 
 interaction_terms <- attr(terms(cca_1), 'term.labels') |> 
   stringr::str_subset(':')
