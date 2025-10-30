@@ -9,7 +9,7 @@
 #' @param group Character; a grouping variable = a column in `env` dataframe (supplied in [gordi_read()]), used to connect observations.
 #' @param cluster Character; column in `env` dataframe (supplied in [gordi_read()]), defining clusters for spiders.
 #' @param spider Logical; draw spider segment for each centroid.
-#' @param hull Logical; draw hulls. Does not work yet.
+#' @param hull Logical; draw hulls.
 #' @param label Logical; when `TRUE` and `spider = TRUE`, draw one label per cluster at the centroid location.
 #' @param linetype Modify the appearance of lines (paths, segments). Can be specified by numeric values (0-6) or by a name ('blank', 'solid', 'dashed', 'dotted', 'dotdash', 'longdash', 'twodash'). Default `'solid'`.
 #' @param linewidth Numeric; set line width.
@@ -38,21 +38,22 @@
 #' @importFrom grid arrow unit
 #' @export
 
-gordi_cluster <- function(pass,
-                          group = '', #column in env table to connect observations (resurvey etc.)
-                          cluster = '', #column in env table for clustering
-                          spider = FALSE, #T/F if u want spiders or hulls
-                          hull = NULL, #T/F if u want spiders or hulls
-                          label = FALSE,
-                          linetype = 'solid',
-                          linewidth = 0.6,
-                          colour = '',
-                          arrow = FALSE,
-                          arrow_type = 'open',
-                          arrow_length = 0.3,
-                          arrow_ends = 'last',
-                          arrow_angle = 30,
-                          show.legend = TRUE
+gordgordi_cluster <- function(pass,
+                              group = '', #column in env table to connect observations (resurvey etc.)
+                              cluster = '', #column in env table for clustering
+                              spider = FALSE, #T/F if u want spiders or hulls
+                              hull = FALSE, #T/F if u want spiders or hulls
+                              label = FALSE,
+                              linetype = 'solid',
+                              linewidth = 0.6,
+                              colour = '',
+                              fill = '',
+                              alpha = 1,
+                              arrow = FALSE,
+                              arrow_type = 'open',
+                              arrow_length = 0.3,
+                              arrow_ends = 'last',
+                              arrow_angle = 30
 ){
   
   site_df <- bind_cols(pass$site_scores, pass$env)
@@ -62,14 +63,12 @@ gordi_cluster <- function(pass,
   
   # actual labs
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else 
-  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 1), "%)")}
+  {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 2), "%)")}
   
   # plot set up  
   if (is.null(pass$plot)) { 
     p <- ggplot2::ggplot() +
       theme_bw() +
-      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
-      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
       labs(x = actual_labs[1], y = actual_labs[2]) +
       ggplot2::theme(
         text = element_text(size = 15),
@@ -90,10 +89,6 @@ gordi_cluster <- function(pass,
     stop("Column `", group, "` not found in the `env` data. Please provide valid input.")
   }
   
-  if (!is.null(hull)){
-    stop("Sorry, this argument is under construction...")
-  }
-  
   map_colour <- !identical(colour, '') && has_name(site_df, colour)
   # const_colour <- !identical(colour, '') && !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
   
@@ -108,6 +103,17 @@ gordi_cluster <- function(pass,
     if(!map_colour && !const_colour){
       warning("`colour` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
       colour <- ''
+    }
+  }
+  
+  map_fill <- !identical(fill, '') && has_name(site_df, fill)
+  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours())|| (is.character(fill) && fill %in% palette()) || (is.numeric(fill) && fill %in% seq_along(palette()))
+  
+  if(!identical(fill, '')){
+    message("To customize fill colours (similarly to `ggplot2::scale_fill_()` functions), please use gordi_colour() right after `gordi_sites()`.")
+    if(!map_fill && !const_fill){
+      warning("`fill` must be either a column in the `env` dataframe, a valid R colour name/hex code, or a numeric code! Ignoring input, default is being used.")
+      fill <- ''
     }
   }
   
@@ -131,22 +137,7 @@ gordi_cluster <- function(pass,
       if(!identical(colour, '')) {
         const_args$colour <- colour} else {const_args$colour <- 1}}
     
-    # mapping <-  if (map_colour) {
-    #   ggplot2::aes(
-    #     x = .data[[x_col]],
-    #     y = .data[[y_col]],
-    #     group = .data[[group]],
-    #     colour = !!rlang::sym(colour))}
-    # else {
-    #   ggplot2::aes(
-    #     x = .data[[x_col]],
-    #     y = .data[[y_col]],
-    #     group = .data[[group]]
-    #   )
-    # }
-    # p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, linetype = linetype, linewidth = linewidth))
-    p <- p + do.call(geom_path, c(list(mapping = do.call(aes, aes_args), data = site_df, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE, show.legend = show.legend), const_args))
-    #  p <- p + geom_path(data = site_df, mapping = mapping, colour = if (const_colour) colour else NULL, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE)
+    p <- p + do.call(geom_path, c(list(mapping = do.call(aes, aes_args), data = site_df, alpha = alpha, linetype = linetype, linewidth = linewidth, arrow = arrow_spec, inherit.aes = FALSE), const_args))
   }
   
   if (isTRUE(spider) && !identical(cluster, '')){
@@ -156,7 +147,6 @@ gordi_cluster <- function(pass,
     
     
     site_centroids <- site_df|>
-      #select(all_of(s.cols))|>
       left_join(centroids, by = cluster)
     
     
@@ -174,10 +164,35 @@ gordi_cluster <- function(pass,
       if(!identical(colour, '')) {
         const_args$colour <- colour} else {const_args$colour <- 1}}
     
-    p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, linetype = linetype, linewidth = linewidth, show.legend = show.legend))
+    p <- p + do.call(geom_segment, c(list(mapping = do.call(aes, aes_args), data = site_centroids), const_args, alpha = alpha, linetype = linetype, linewidth = linewidth))
   }
+  
+  if (isTRUE(hull) && !identical(cluster, '')){
+    border <- site_df|>
+      group_by(.data[[cluster]])|>
+      slice(chull(.data[[x_col]], .data[[y_col]]))
+    
+    aes_args <- list(
+      x = rlang::sym(x_col),
+      y = rlang::sym(y_col)
+    )
+    if (map_colour) aes_args$colour <- sym(colour)
+    if(map_fill) aes_args$fill <- sym(fill)
+    
+    const_args<- list()
+    if(!map_colour) {
+      if(!identical(colour, '')) {
+        const_args$colour <- colour} else {const_args$colour <- 1}}
+    
+    if(!map_fill) {
+      if(!identical(fill, '')) { 
+        const_args$fill <- fill} else {const_args$fill <- 'white'}}
+    
+    p <- p + do.call(geom_polygon, c(list(mapping = do.call(aes, aes_args), data = border), const_args, alpha = alpha))
+  }
+  
   if (isTRUE(label) && isTRUE(spider) && !identical(cluster, '')){
-    p <- p + geom_label(data = centroids, mapping = aes(x = .data[['.xc']], y = .data[['.yc']], label = .data[[cluster]]), inherit.aes = F, show.legend = show.legend)
+    p <- p + geom_label(data = centroids, mapping = aes(x = .data[['.xc']], y = .data[['.yc']], label = .data[[cluster]]), inherit.aes = F)
   }
   
   pass$plot <- p 
