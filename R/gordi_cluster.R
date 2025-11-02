@@ -24,10 +24,14 @@
 #' 
 #' @examples
 #' # display site scores colour sites based on treatment, and connect the same sites
-#' gordi_read(pco.bc, env = auch.env)|> gordi_sites(colour = 'Treatment')|> gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen'))|> gordi_cluster(group = 'site', linetype = 'dotted')
+#' gordi_read(pco.bc, env = auch.env) |> 
+#' gordi_sites(colour = 'Treatment') |>
+#' gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen')) |> 
+#' gordi_cluster(group = 'site', linetype = 'dotted')
 #'
 #' #display NMDS, draw spiders to hydrology clusters and label centroids
-#' gordi_read(nmds.3, spe = chiro, env = chiro.env)|> gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
+#' gordi_read(nmds.3, spe = chiro, env = chiro.env) |>
+#' gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
 #' 
 #' @seealso [gordi_read()], [gordi_sites()], [gordi_colour()], [ggplot2::geom_path()], [ggplot2::geom_segment()], [ggplot2::geom_label()]
 #' 
@@ -37,8 +41,7 @@
 #' @importFrom ggnewscale new_scale_colour
 #' @importFrom grid arrow unit
 #' @export
-
-gordgordi_cluster <- function(pass,
+gordi_cluster <- function(pass,
                               group = '', #column in env table to connect observations (resurvey etc.)
                               cluster = '', #column in env table for clustering
                               spider = FALSE, #T/F if u want spiders or hulls

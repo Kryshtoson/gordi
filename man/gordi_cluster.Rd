@@ -9,17 +9,18 @@ gordi_cluster(
   group = "",
   cluster = "",
   spider = FALSE,
-  hull = NULL,
+  hull = FALSE,
   label = FALSE,
   linetype = "solid",
   linewidth = 0.6,
   colour = "",
+  fill = "",
+  alpha = 1,
   arrow = FALSE,
   arrow_type = "open",
   arrow_length = 0.3,
   arrow_ends = "last",
-  arrow_angle = 30,
-  show.legend = TRUE
+  arrow_angle = 30
 )
 }
 \arguments{
@@ -31,7 +32,7 @@ gordi_cluster(
 
 \item{spider}{Logical; draw spider segment for each centroid.}
 
-\item{hull}{Logical; draw hulls. Does not work yet.}
+\item{hull}{Logical; draw hulls.}
 
 \item{label}{Logical; when `TRUE` and `spider = TRUE`, draw one label per cluster at the centroid location.}
 
@@ -62,10 +63,14 @@ To connect observations, you need to set argument `group` to a column in `env` d
 }
 \examples{
 # display site scores colour sites based on treatment, and connect the same sites
-gordi_read(pco.bc, env = auch.env)|> gordi_sites(colour = 'Treatment')|> gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen'))|> gordi_cluster(group = 'site', linetype = 'dotted')
+gordi_read(pco.bc, env = auch.env) |> 
+gordi_sites(colour = 'Treatment') |>
+gordi_colour(scale = 'discrete', family = 'manual', values = c('darkorange', 'darkgreen')) |> 
+gordi_cluster(group = 'site', linetype = 'dotted')
 
 #display NMDS, draw spiders to hydrology clusters and label centroids
-gordi_read(nmds.3, spe = chiro, env = chiro.env)|> gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
+gordi_read(nmds.3, spe = chiro, env = chiro.env) |>
+gordi_cluster(cluster = 'hydr', spider = T, colour = 'hydr', label = T)
 
 }
 \seealso{
