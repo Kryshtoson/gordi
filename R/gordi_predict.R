@@ -167,6 +167,8 @@ gordi_predict <- function(
   ### --- INTERACTION TERMS ---
   vector_inter_scores <- tibble::tibble()
   factor_inter_scores <- tibble::tibble()
+  
+  interaction_table <- tibble::tibble()
 
   if (length(inter_terms) > 0) {
 

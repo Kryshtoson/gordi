@@ -5,6 +5,7 @@ library(gordi)
 library(patchwork)
 library(ggpubr)
 
+remotes::install_github('Kryshtoson/gordi')
 
 
 # Import ------------------------------------------------------------------
@@ -366,11 +367,18 @@ rda_1 <- rda(spe ~ annual_temperature*may_temperature + carbon*alt_class + carbo
 
 
 gordi_read(rda_1, env = env, scaling = 'spe', correlation = T) |> 
-  #gordi_species() |> 
+  gordi_predict(colour = 'score', scaling_coefficient = 40, show_label = T, repel_label = T)
+
+data(dune)
+data(dune.env)
+
+dbrda <- capscale(sqrt(dune) ~ A1, data = dune.env)
+
+gordi_read(dbrda, env = dune.env, scaling = 'spe', correlation = T) |> 
   gordi_predict(colour = 'score', scaling_coefficient = 40, show_label = T, repel_label = T)
 
 
-
+devtools::document()
 
 
 
