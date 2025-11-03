@@ -75,7 +75,7 @@
 #'    gordi_species(label = F) |>
 #'    # Predictors (A1: continuous arrow, Management: categorical centroids)
 #'    # Colour is dynamically mapped to the 'score' column (biplot or centroid)
-#'    gordi_predict(scaling_coefficient = 1, colour = 'score', size = 4)
+#'    gordi_predict2(scaling_coefficient = 1, colour = 'score', size = 4)
 #' 
 #' # --- 2. Example with an interaction term ---
 #' # The interaction term will be calculated post-hoc via envfit
@@ -83,7 +83,7 @@
 #' gordi_read(m2, env = dune.env, scaling = 'species', correlation = T) |>
 #'    gordi_sites() |>
 #'    # Predictors include main effects and interaction effects (e.g., A1:Management)
-#'    gordi_predict(show_label = T, repel_label = T, colour = 'score', size = 3)  
+#'    gordi_predict2(show_label = T, repel_label = T, colour = 'score', size = 3)  
 #' @export
 gordi_predict2 <- function(
     pass,
@@ -153,6 +153,7 @@ gordi_predict2 <- function(
       stop('If you want to display interactions, you must provide env table to the `gordi_read()`.')
       }
     
+  # what interacts with what
     interaction_table <- inter_terms |>
       str_split(pattern = ":") |>
       set_names(~ paste0("inter_", seq_along(.))) |> 
@@ -169,86 +170,85 @@ gordi_predict2 <- function(
         TRUE ~ class(pass$env[[variable]])[1])
       ) |> 
       ungroup()  
-    
-    
+
   }
   
-  
-  # --- FOR LOOP to obtain interaction scores ---
-  interaction_df <- tibble(.rows = nrow(pass$env))
-  
-  for (i in pull(distinct(interaction_table, inter_ID))) {
-    
-    # filter out interaction terms
-    inter <- interaction_table |> 
-      filter(inter_ID == i) |> 
-      select(variable) |> 
-      pull()
-    
-    inter_class <- pass$env |>
-      select(all_of(inter)) |> 
-      map_chr(class) 
-    
-    # Variable to hold the result of the current iteration
-    current_df <- NULL
-    
-    
-    # --- NUMERIC x NUMERIC ---
-    if (all(inter_class %in% c('numeric', 'integer', 'double'))) {
-      current_df <- as_tibble(pass$env[,inter[1]] * pass$env[,inter[2]])
-      colnames(current_df) <- paste(inter[1], inter[2], sep = ':')
+    # --- FOR LOOP to obtain interaction scores ---
+    interaction_df <- NULL #tibble(.rows = nrow(pass$env)) # here, interaction_df is created as an empty table, with the correct number of rows, but no columns
+
+    if (length(inter_terms) > 0) {  
       
-      # --- NUMERIC x FACTOR/CHARACTER ---        
-    } else if (any(inter_class %in% c('character', 'factor')) && 
-               any(inter_class %in% c('numeric', 'integer', 'double'))) {
-      inter_df_vct <- NULL
-      inter_df_fct <- NULL
+    for (i in pull(distinct(interaction_table, inter_ID))) {
+    
+      # filter out interaction terms
+      inter <- interaction_table |> 
+        filter(inter_ID == i) |> 
+        select(variable) |> 
+        pull()
+    
+      inter_class <- pass$env |>
+        select(all_of(inter)) |> 
+        map_chr(class) 
+    
+      # Variable to hold the result of the current iteration
+      current_df <- NULL
+    
+      # --- NUMERIC x NUMERIC ---
+      if (all(inter_class %in% c('numeric', 'integer', 'double'))) {
+        current_df <- as_tibble(pass$env[,inter[1]] * pass$env[,inter[2]])
+        colnames(current_df) <- paste(inter[1], inter[2], sep = ':')
+        
+        # --- NUMERIC x FACTOR/CHARACTER ---        
+      } else if (any(inter_class %in% c('character', 'factor')) && 
+                 any(inter_class %in% c('numeric', 'integer', 'double'))) {
+        
+        inter_df_vct <- NULL
+        inter_df_fct <- NULL
       
-      if (inter_class[1] %in% c('character', 'factor')) {
-        inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[1]]) |> select(-1)
-      } else {
-        inter_df_vct <- pass$env[,inter[1]]
-      }
+          if (inter_class[1] %in% c('character', 'factor')) {
+            inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[1]]) |> select(-1)
+          } else {
+            inter_df_vct <- pass$env[,inter[1]]
+          }
       
-      if (inter_class[2] %in% c('character', 'factor')) {
-        inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[2]]) |> select(-1)
-      } else {
-        inter_df_vct <- pass$env[,inter[2]]
-      }
+          if (inter_class[2] %in% c('character', 'factor')) {
+            inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[2]]) |> select(-1)
+          } else {
+            inter_df_vct <- pass$env[,inter[2]]
+          }
       
       current_df <- as_tibble(as.vector(inter_df_vct) * as.data.frame(inter_df_fct)) 
       names(current_df) <- paste(names(inter_df_vct), names(inter_df_fct), sep = ":")
       
       # --- FACTOR/CHARACTER x FACTOR/CHARACTER ---    
-    } else if (all(inter_class %in% c('character', 'factor'))) {
-      var1_name <- inter[1]  
-      var2_name <- inter[2]  
+      } else if (all(inter_class %in% c('character', 'factor'))) {
+        var1_name <- inter[1]  
+        var2_name <- inter[2]  
       
-      final_col_name <- paste(var1_name, var2_name, sep = ":")
+        final_col_name <- paste(var1_name, var2_name, sep = ":")
       
-      current_df <- pass$env |>
-        mutate(
-          interaction_term = paste(
-            paste0(var1_name, "_", pass$env[[var1_name]]),
-            paste0(var2_name, "_", pass$env[[var2_name]]),
-            sep = ":")) |>
-        select(interaction_term) |> 
-        setNames(final_col_name)
+        current_df <- pass$env |>
+          mutate(
+            interaction_term = paste(
+              paste0(var1_name, "_", pass$env[[var1_name]]),
+              paste0(var2_name, "_", pass$env[[var2_name]]),
+              sep = ":")) |>
+          select(interaction_term) |> 
+          setNames(final_col_name)
+      }
       
-    }
     
-    if (ncol(interaction_df) == 0) {
-      interaction_df <- current_df
-    } else {
-      interaction_df <- bind_cols(interaction_df, current_df)
-    }
+        if (is.null(interaction_df)) {
+          interaction_df <- current_df
+        } else {
+          interaction_df <- bind_cols(interaction_df, current_df)
+        }
     
   }
   
-  interaction_df
-  
-  
-  
+  } # end of if() that starts before forloop
+    
+    
   # --- CACULATE ENVFIT ---
   if (length(inter_terms) > 0) {
     inter_ef <- envfit(pass$m, env = interaction_df, 
@@ -270,10 +270,8 @@ gordi_predict2 <- function(
       ) |>
       dplyr::select(-level)
     
-  } else {
-    vector_inter_scores <- NULL
-    factor_inter_scores <- NULL
-  }
+  }  
+
   
   
   # --- MERGE PREDICTOR TABLES together ---

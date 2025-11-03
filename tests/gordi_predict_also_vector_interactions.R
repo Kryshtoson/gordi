@@ -22,7 +22,7 @@ env <- read_csv('data/schrankogel/schrankogel_env.csv') |>
                               TRUE ~ 'basic'))
 
 
-glimpse(env)
+# glimpse(env)
 
 # RDA ---------------------------------------------------------------------
 
@@ -71,7 +71,6 @@ table(sco_rda_1$score)
 sco_rda_1 |> 
   filter(!score %in% c('species', 'sites', 'constraints')) |> 
   print(n = Inf)
-
 
 
 # Get predictor scores ----------------------------------------------------
@@ -152,17 +151,20 @@ dbrda_4
 
 
 # gordi
-gordi_read(rda_5, env = env |> 
-             bind_cols(interaction_df), spe = spe, scaling = 'si', correlation = T) |>
+gordi_read(rda_1, env = env, spe = spe, scaling = 'si', correlation = T) |>
   # gordi_fit(abs_frequency = 30) |> 
   gordi_species(alpha = 0) |> 
-  gordi_predict(show_label = T, repel_label = T, colour = 'score') |> 
-  gordi_corr(variables = c('alt_class:ph_class'), show_label = T)
+  gordi_predict2(show_label = T, repel_label = T, colour = 'score') 
+  # gordi_corr(variables = c('alt_class:ph_class'), show_label = T)
 
 data(dune)
 data(dune.env)
 
 devtools::document()
+
+
+tibble(.rows = nrow(env)) |> is.null()
+
 
 # --- 1. Example with main effects ---
 m1 <- capscale(dune ~ A1 + Management, data = dune.env)
@@ -352,6 +354,22 @@ sco_rda_1 |>
 
 ordiplot(rda_1, scaling = 'spe')
 plot(ef, col = 3)
+
+
+
+
+# gordi_predict3 ----------------------------------------------------------
+
+rda_1 <- rda(spe ~ annual_temperature*may_temperature + carbon*alt_class + carbon*ph_class + alt_class*ph_class,
+             data = env)
+
+
+
+gordi_read(rda_1, env = env, scaling = 'spe', correlation = T) |> 
+  #gordi_species() |> 
+  gordi_predict(colour = 'score', scaling_coefficient = 40, show_label = T, repel_label = T)
+
+
 
 
 
