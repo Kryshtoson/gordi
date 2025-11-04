@@ -1,6 +1,15 @@
 ---
 title: 'gordi: Plot ordination diagrams with ggplot2'
 output:
+  pdf_document: 
+    latex_engine: xelatex
+    df_print: default
+  rmarkdown::html_vignette: 
+    toc: true
+    toc_depth: 3
+    toc_float: 
+      collapsed: false
+    theme: default
   html_document:
     theme: default
     toc: true
@@ -8,15 +17,10 @@ output:
     toc_float: 
       collapsed: false
     df_print: paged
-  rmarkdown::html_vignette: 
-    toc: true
-    toc_depth: 3
-    toc_float: 
-      collapsed: false
-    theme: default
-  pdf_document: default
-vignette: "%\\VignetteEncoding{UTF-8} %\\VignetteIndexEntry{\"gordi: Plot ordination
-  diagrams with ggplot2\"} %\\VignetteEngine{knitr::rmarkdown}\n"
+vignette: >
+  "%\\VignetteEncoding{UTF-8}
+  %\\VignetteIndexEntry{\"gordi: Plot ordination diagrams with ggplot2\"}
+  %\\VignetteEngine{knitr::rmarkdown}\n"
 ---
 
 ```{r, include = FALSE}
@@ -51,7 +55,6 @@ With `gordi`, you can:
     -   `capscale()` for PCoA and db-RDA
     -   `metaMDS()` for NMDS
     -   `decorana()` for DCA
-
 
 -   visualize them quickly with clear and customizable plots via the **ggplot2** framework
 
@@ -322,46 +325,17 @@ m |>
 
 ## List of `gordi_` functions
 
-```{r gordi-function-table, echo=FALSE, message=FALSE}
-library(dplyr)
-library(knitr)
-library(kableExtra)
-
-# 1. Create the data frame of functions and descriptions
-gordi_functions <- tibble(
-  `Function Name` = c(
-    "`gordi_read()`", "`gordi_sites()`", "`gordi_species()`", "`gordi_predict()`",
-    "`gordi_corr()`", "`gordi_fit()`", "`gordi_colour()`", "`gordi_shape()`",
-    "`gordi_label()`", "`gordi_cluster()`", "`gordi_plot()`"
-  ),
-  `Description` = c(
-    "Reads the output from the `vegan` ordination model and translates it to be used by `gordi_` functions. **(Must be first in the pipeline)**",
-    "Displays **Site** (sample) coordinates (scores) and default labels.",
-    "Displays **Species** coordinates (scores) and default labels.",
-    "Displays **Predictor** scores from **constrained** ordinations (like RDA or CCA).",
-    "**Passively fits** environmental variables onto **unconstrained** ordination axes (wrapper for `vegan::envfit`).",
-    "**Filters species** based on $R^2$ with axes or frequency in the dataset. **Must be placed before `gordi_species()`**.",
-    "Changes default colour palettes when mapped **dynamically**. Must be applied immediately after what it should change.",
-    "Changes default point shapes when mapped **dynamically**. Must be applied immediately after what it should change.",
-    "Adjusts labels for species, sites, and predictors. Useful for creating **taxon shortcuts**.",
-    "Draws **spiders** or **hulls** (polygons) around groups of sites.",
-    "Extracts the plot object for customization with standard **`ggplot2`** syntax."
-  )
-)
-
-# 2. Render the table using kable and kableExtra for styling
-gordi_functions %>%
-  kable(
-    caption = "List of all `gordi` functions", 
-    format = "markdown" # Use markdown format for simple rendering across HTML/PDF
-    # You can change 'markdown' to 'html' or 'latex' for advanced styling if needed
-  ) %>%
-  kable_styling(
-    bootstrap_options = "striped", # Styling option for HTML
-    latex_options = "HOLD_position", # Styling option for PDF
-    full_width = T
-  )
-```
+-   `gordi_read()` - Reads the output from the `vegan` ordination model and translates it to be used by `gordi_` functions. **(Must be first in the pipeline)**
+-   `gordi_sites()` - Displays **Site** (sample) coordinates (scores) and default labels.
+-   `gordi_species()` - Displays **Species** coordinates (scores) and default labels.
+-   `gordi_predict()` - Displays **Predictor** scores from **constrained** ordinations (like RDA or CCA).
+-   `gordi_corr()` - **Passively fits** environmental variables onto **unconstrained** ordination axes (wrapper for `vegan::envfit`).
+-   `gordi_fit()` - **Filters species** based on $R^2$ with axes or frequency in the dataset. **Must be placed before `gordi_species()`**.
+-   `gordi_colour()` - Changes default colour palettes when mapped **dynamically**. Must be applied immediately after what it should change.
+-   `gordi_shape()` - Changes default point shapes when mapped **dynamically**. Must be applied immediately after what it should change.
+-   `gordi_label()` - Adjusts labels for species, sites, and predictors. Useful for creating **taxon shortcuts**.
+-   `gordi_cluster()` - Draws **spiders** or **hulls** (polygons) around groups of sites.
+-   `gordi_plot()` - Extracts the plot object for customization with standard **`ggplot2`** syntax.
 
 # Limitations
 
