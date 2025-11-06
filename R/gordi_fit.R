@@ -77,11 +77,12 @@ gordi_fit <- function(pass,
     inherits(m, 'capscale') & !is.null(m$call$distance) & is.null(m$CCA)                            ~ 'PCoA', #via capscale
     inherits(m, 'capscale') & !is.null(m$call$distance)                                             ~ 'db-RDA',
     inherits(m, 'rda') & is.null(m$call$distance) & is.null(m$CCA) & !inherits(m, 'capscale')       ~ 'PCA',
-    inherits(m, 'rda')                                                                              ~ 'RDA',
+    inherits(m, 'rda') & !inherits(m, 'capscale')                                                   ~ 'RDA',
     inherits(m, 'cca') & is.null(m$call$distance) & is.null(m$CCA)                                  ~ 'CA',
-    inherits(m, 'cca')                                                                              ~ 'CCA',
+    inherits(m, 'cca') & !inherits(m, 'capscale')                                                   ~ 'CCA',
     inherits(m, 'decorana')                                                                         ~ 'DCA',
     inherits(m, c('metaMDS', 'monoMDS'))                                                            ~ 'NMDS',
+    # inherits(m, 'capscale')                                                                         ~ 'capscale',
     TRUE ~ paste(class(m), collapse = '/') # writes just one output
   )
 
@@ -96,11 +97,19 @@ gordi_fit <- function(pass,
   
   if (!is.na(model)){
     warning("Using function `goodness()` to calculate goodness of fit.")
-    if (!is.null(slice_max)){
-    goodness_fit <- goodness(m, display = 'species', model = model, choices = choices, summarize = summarize)|>
-      as_tibble()
+    if (!is.null(slice_max) && isFALSE(summarize)){
+    goodness_fit <- goodness(m, display = 'species', model = model, choices = choices, summarize = F)|>
+      as_tibble()|>
+      rename(value = 1)
     spe_fitted <- bind_cols(pass$species_names, goodness_fit, pass$species_scores)
     } 
+    if (!is.null(slice_max) && isTRUE(summarize)){
+      goodness_fit <- goodness(m, display = 'species', model = model, choices = choices, summarize = F)|>
+        as_tibble()|>
+        rowSums()|>
+        as_tibble()
+      spe_fitted <- bind_cols(pass$species_names, goodness_fit, pass$species_scores)
+    }
   }
   
   if (inherits(m, 'capscale') || type == 'DCA'){
