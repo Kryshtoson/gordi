@@ -1,15 +1,6 @@
 ---
 title: 'gordi: Plot ordination diagrams with ggplot2'
 output:
-  pdf_document: 
-    latex_engine: xelatex
-    df_print: default
-  rmarkdown::html_vignette: 
-    toc: true
-    toc_depth: 3
-    toc_float: 
-      collapsed: false
-    theme: default
   html_document:
     theme: default
     toc: true
@@ -17,6 +8,15 @@ output:
     toc_float: 
       collapsed: false
     df_print: paged
+  rmarkdown::html_vignette: 
+    toc: true
+    toc_depth: 3
+    toc_float: 
+      collapsed: false
+    theme: default
+  pdf_document: 
+    latex_engine: xelatex
+    df_print: default
 vignette: >
   "%\\VignetteEncoding{UTF-8}
   %\\VignetteIndexEntry{\"gordi: Plot ordination diagrams with ggplot2\"}
@@ -34,7 +34,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-![](logo.png)
+![](gordi_3 polygony green outline.png)
 
 ```{r setup}
 library(gordi)
@@ -352,3 +352,5 @@ If you run into a bug or you would welcome some feature, which is not available 
 -   Branislav Kopčan: [kopcanb\@gmail.com](mailto:kopcanb@gmail.com){.email}
 
 You can also contact us anonymously through this [Google Form](https://forms.gle/KnrFRnYT9jv1JHCC8).
+
+![](logo.png)
