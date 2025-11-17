@@ -333,8 +333,8 @@ gordi_predict <- function(
           filter(score == 'constraints') |>
           bind_cols(pass$env) |>
           group_by(pick(all_of(c(var1_name, var2_name)))) |>
-          summarise(CAP1 = mean(CAP1, na.rm = T),
-                    CAP2 = mean(CAP2, na.rm = T)) |>
+          summarize(across(.cols = c(1, 2), # Select columns by their position (1st and 2nd)
+                   .fns = ~ mean(.x, na.rm = TRUE))) |>
           ungroup() |>
           unite({{final_col_name}}, where(is.character), sep = ':') |>
           relocate(c(CAP1, CAP2), .before = 1) |> 
