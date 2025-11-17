@@ -52,7 +52,7 @@ gordi_read(dbrda1, scaling = 'spe', correlation = T, env = env, spe = spe, const
   #gordi_fit(slice_max = 30) |> 
   #gordi_species() |> 
   #gordi_sites(size = 1) |> 
-  gordi_predict2(show_label = T, label = 'variable_level', colour = 'class', repel_label = T) 
+  gordi_predict(show_label = T, label = 'variable_level', colour = 'class', repel_label = T) 
   #gordi_label(what = 'species', shortcut = 'upper.lower', size = 2, shortcut_colour = 4) 
 
 

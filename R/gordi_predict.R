@@ -336,8 +336,8 @@ gordi_predict <- function(
           summarize(across(.cols = c(1, 2), # Select columns by their position (1st and 2nd)
                    .fns = ~ mean(.x, na.rm = TRUE))) |>
           ungroup() |>
-          unite({{final_col_name}}, where(is.character), sep = ':') |>
-          relocate(c(CAP1, CAP2), .before = 1) |> 
+          unite({{final_col_name}}, where(~ is.character(.x) | is.factor(.x)), sep = ':') |>
+          relocate(c(1, 2), .before = 1) |> 
           pivot_longer(-where(is.numeric), names_to = 'interacting_variables', values_to = 'level_combinations') |> 
           rename(variable = interacting_variables,
                  level = level_combinations) |> 
