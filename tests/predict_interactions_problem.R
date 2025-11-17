@@ -6,6 +6,7 @@ library(patchwork)
 library(ggpubr)
 
 
+devtools::document()
 
 # Import ------------------------------------------------------------------
 

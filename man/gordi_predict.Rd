@@ -102,8 +102,8 @@ both, static and dynamic variable (e.g., 'red' or 'elevation').
     (every point/arrow have the same colour, size, shape...).
 }
 }
-\section{\strong{Constraints}{
-}
+\section{Constraints}{
+
 \itemize{
   \item The function only supports \strong{constrained ordinations} (\code{RDA}, \code{CCA}, \code{db-RDA}). For plotting passively fitted environmental variables on an unconstrained plot, use \code{\link[gordi]{gordi_corr}}. 
   \item The calculation of interaction scores involving continuous variables is only fully supported when the ordination was run with \strong{\code{scaling = 'species'}}
