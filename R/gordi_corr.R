@@ -134,7 +134,7 @@ gordi_corr <- function(
                permutations = permutations,
                strata = strata,
                choices = pass$choices,
-               scaling = pass$scaling,
+               scaling = pass$scaling, # also here is the problem with sites and symm
                correlation = pass$correlation,
                hill = pass$hill,
                const = pass$const)

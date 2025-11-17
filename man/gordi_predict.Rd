@@ -7,7 +7,8 @@
 gordi_predict(
   pass,
   scaling_coefficient = 0.9,
-  label = c("label"),
+  label = NULL,
+  custom_label = NULL,
   show_label = F,
   repel_label = F,
   colour = "",
@@ -30,9 +31,16 @@ continuous predictor arrows relative to the overall plot range. A value of \code
 scales the longest arrow to 90\% of the plot's maximum extent. Scaling coefficient 
 applies only to vector variables (arrows).}
 
-\item{label}{The column name in the scores tibble to use for text labels. Defaults to
-\code{'label'} which typically holds predictor names or factor levels. \emph{In the future, 
-there may be more options how to label the points/arrows.}}
+\item{label}{The column name in the \code{pass$predictor_scores} tibble to use for text labels. Options are:
+\itemize{
+  \item \code{'variable_level'} (Default): Combines variable name and variable level (for categorical variables).
+  \item \code{'variable'}: Just variable names.
+  \item \code{'level'}: Variable names for continuous variables and just level names for categorical variables (might be better option than the default when the labels are too long.)
+  \item \code{'custom'}: Uses the labels provided in the \code{custom_labels} argument.
+}}
+
+\item{custom_label}{An optional character vector of labels to use if \code{label = 'custom'}.
+Its order and length must exactly match the number of rows in \code{pass$predictor_scores}.description}
 
 \item{show_label}{A logical value. If \code{TRUE}, text labels for the predictors are
 added to the plot.}
@@ -67,37 +75,42 @@ or a constant numeric value.}
 The function returns the modified \code{pass} list object, which now contains:
 \itemize{
   \item \code{pass$predictor_scores}: A tibble containing all main and interaction predictor scores.
+  \item \code{pass$predictor_names}: Updated labels.
   \item \code{pass$plot}: The updated \code{ggplot} object with the predictor scores added.
 }
 }
 \description{
-!!!THIS IS EXPERIMENTAL VERSION!!! This function takes the result 
-from [gordi_read()] and creates plot with predictor arrows (for continuous variables)
-and points (for categorical variables, i.e., centroids). Similarly to [gordi_species()]
-and [gordi_sites()], a wide range of graphing parameters can be set, such as colour,
-fill, size, shape, alpha, stroke, and more traditional ggplot arguments, which can read
+This function takes the result from [gordi_read()] and creates plot with predictor
+arrows (for continuous variables) and points (for categorical variables, i.e., centroids).
+Similarly to [gordi_species()] and [gordi_sites()], a wide range of graphing parameters can be set,
+such as colour, fill, size, shape, alpha, stroke, and more traditional ggplot arguments, which can read
 both, static and dynamic variable (e.g., 'red' or 'elevation').
 }
 \details{
 \itemize{
-  \item Continuous variables are plotted as \strong{arrows} (biplot scores). The length of these
+  \item Continuous variables are plotted as \strong{arrows} (biplot scores). The length of the
     arrows is scaled by the argument \code{scaling_coefficient}.
   \item Categorical variables are plotted as \strong{centroids} of site 'lc' scores (factor scores).
-  \item \strong{Interaction terms} are calculated post-hoc using \code{vegan::envfit} with
-    \code{display = 'lc'} (linear combinations) and plotted as arrows/points accordingly.
+  \item \strong{Interactions scores} are calculated directly in this function, because \code{vegan} 
+    can't calculate all scores for levels of interacting categorical variables. Due to this vector:vector
+    and vector:factor variables are calculated post-hoc using \code{vegan::envfit} with \code{display = 'lc'}
+    (linear combinations) and plotted as arrows. Factor:factor interactions are calculated as mean `LC` site
+    scores for each level combination and plotted as points.
   \item Aesthetics (\code{colour}, \code{size}, etc.) are handled dynamically: if the input
-    matches a column name in the predictor scores, it is \strong{mapped} (value of the aestethics
+    matches a column name in the `pass$predictor scores`, it is \strong{mapped} (value of the aestethics
     reflects some variable); otherwise, it is treated as a \strong{constant} aesthetic
     (every point/arrow have the same colour, size, shape...).
 }
 }
-\section{Constraints}{
+\section{\strong{Constraints}{
+}
+\itemize{
+  \item The function only supports \strong{constrained ordinations} (\code{RDA}, \code{CCA}, \code{db-RDA}). For plotting passively fitted environmental variables on an unconstrained plot, use \code{\link[gordi]{gordi_corr}}. 
+  \item The calculation of interaction scores involving continuous variables is only fully supported when the ordination was run with \strong{\code{scaling = 'species'}}
+  }
+}
 
-The function only supports \strong{constrained ordinations} (\code{RDA}, \code{CCA}, \code{db-RDA}).
-For plotting passively fitted environmental variables on an unconstrained plot, use
-\code{gordi_corr()}.
-
-#' @examples 
+\examples{
 library(vegan)
 
 data(dune)
@@ -109,7 +122,7 @@ gordi_read(m1, env = dune.env, scaling = 'species', correlation = T) |>
    gordi_species(label = F) |>
    # Predictors (A1: continuous arrow, Management: categorical centroids)
    # Colour is dynamically mapped to the 'score' column (biplot or centroid)
-   gordi_predict(scaling_coefficient = 1, colour = 'score', size = 4)
+   gordi_predict(show_label = T, scaling_coefficient = 1, colour = 'score', size = 4)
 
 # --- 2. Example with an interaction term ---
 # The interaction term will be calculated post-hoc via envfit
@@ -117,6 +130,5 @@ m2 <- capscale(dune ~ A1 * Management, data = dune.env)
 gordi_read(m2, env = dune.env, scaling = 'species', correlation = T) |>
    gordi_sites() |>
    # Predictors include main effects and interaction effects (e.g., A1:Management)
-   gordi_predict(show_label = T, repel_label = T, colour = 'score', size = 3)
+   gordi_predict(show_label = T, repel_label = T, colour = 'score', size = 3)  
 }
-

@@ -1,23 +1,21 @@
 #' Plot predictors from constrained ordination
 #'
-#' @description This function takes the result from [gordi_read()] and creates plot with predictor
-#' arrows (for continuous variables) and points (for categorical variables, i.e., centroids).
-#' Similarly to [gordi_species()] and [gordi_sites()], a wide range of graphing parameters can be set,
-#' such as colour, fill, size, shape, alpha, stroke, and more traditional ggplot arguments, which can read
+#' @description !!!THIS IS EXPERIMENTAL VERSION!!! This function takes the result 
+#' from [gordi_read()] and creates plot with predictor arrows (for continuous variables)
+#' and points (for categorical variables, i.e., centroids). Similarly to [gordi_species()]
+#' and [gordi_sites()], a wide range of graphing parameters can be set, such as colour,
+#' fill, size, shape, alpha, stroke, and more traditional ggplot arguments, which can read
 #' both, static and dynamic variable (e.g., 'red' or 'elevation').
 #' 
 #' @details
 #' \itemize{
-#'   \item Continuous variables are plotted as \strong{arrows} (biplot scores). The length of the
+#'   \item Continuous variables are plotted as \strong{arrows} (biplot scores). The length of these
 #'     arrows is scaled by the argument \code{scaling_coefficient}.
 #'   \item Categorical variables are plotted as \strong{centroids} of site 'lc' scores (factor scores).
-#'   \item \strong{Interactions scores} are calculated directly in this function, because \code{vegan} 
-#'     can't calculate all scores for levels of interacting categorical variables. Due to this vector:vector
-#'     and vector:factor variables are calculated post-hoc using \code{vegan::envfit} with \code{display = 'lc'}
-#'     (linear combinations) and plotted as arrows. Factor:factor interactions are calculated as mean `LC` site
-#'     scores for each level combination and plotted as points.
+#'   \item \strong{Interaction terms} are calculated post-hoc using \code{vegan::envfit} with
+#'     \code{display = 'lc'} (linear combinations) and plotted as arrows/points accordingly.
 #'   \item Aesthetics (\code{colour}, \code{size}, etc.) are handled dynamically: if the input
-#'     matches a column name in the `pass$predictor scores`, it is \strong{mapped} (value of the aestethics
+#'     matches a column name in the predictor scores, it is \strong{mapped} (value of the aestethics
 #'     reflects some variable); otherwise, it is treated as a \strong{constant} aesthetic
 #'     (every point/arrow have the same colour, size, shape...).
 #' }
@@ -30,15 +28,9 @@
 #'   continuous predictor arrows relative to the overall plot range. A value of \code{0.9}
 #'   scales the longest arrow to 90\% of the plot's maximum extent. Scaling coefficient 
 #'   applies only to vector variables (arrows).
-#' @param label The column name in the \code{pass$predictor_scores} tibble to use for text labels. Options are:
-#'   \itemize{
-#'     \item \code{'variable_level'} (Default): Combines variable name and variable level (for categorical variables).
-#'     \item \code{'variable'}: Just variable names.
-#'     \item \code{'level'}: Variable names for continuous variables and just level names for categorical variables (might be better option than the default when the labels are too long.)
-#'     \item \code{'custom'}: Uses the labels provided in the \code{custom_labels} argument.
-#'   }
-#' @param custom_label An optional character vector of labels to use if \code{label = 'custom'}.
-#'   Its order and length must exactly match the number of rows in \code{pass$predictor_scores}.description   
+#' @param label The column name in the scores tibble to use for text labels. Defaults to
+#'   \code{'label'} which typically holds predictor names or factor levels. \emph{In the future, 
+#'   there may be more options how to label the points/arrows.}
 #' @param show_label A logical value. If \code{TRUE}, text labels for the predictors are
 #'   added to the plot.
 #' @param repel_label A logical value. If \code{TRUE}, \code{ggrepel::geom_text_repel}
@@ -63,35 +55,31 @@
 #' @return The function returns the modified \code{pass} list object, which now contains:
 #' \itemize{
 #'   \item \code{pass$predictor_scores}: A tibble containing all main and interaction predictor scores.
-#'   \item \code{pass$predictor_names}: Updated labels.
 #'   \item \code{pass$plot}: The updated \code{ggplot} object with the predictor scores added.
 #' }
 #'
 #' 
 #' @importFrom rlang is_empty sym syms expr
-#' @importFrom stringr str_detect regex str_extract str_remove str_split str_replace
-#' @importFrom dplyr filter mutate bind_cols rename select pull case_when ungroup rowwise distinct across pick
-#' @importFrom tidyr unite pivot_longer separate_wider_delim
+#' @importFrom stringr str_detect regex str_extract str_remove str_split
+#' @importFrom dplyr filter mutate bind_cols rename select pull case_when ungroup rowwise distinct
+#' @importFrom tidyr unite
 #' @importFrom purrr discard keep imap_dfr map_chr
 #' @importFrom grDevices colours palette
 #' @importFrom ggplot2 ggplot theme_bw labs theme element_text element_blank element_rect aes geom_segment arrow unit geom_point ggplot_build geom_text
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom utils hasName
-#' @importFrom tidyselect last_col all_of where
+#' @importFrom tidyselect last_col all_of
 #' @importFrom fastDummies dummy_cols
 #' @importFrom vegan envfit scores
-#' @importFrom tibble tibble as_tibble
-#' @importFrom grid unit
+#' @importFrom tibble tibble
 #'
 #'
-#' @section \strong{Constraints:}
-#' \itemize{
-#'   \item The function only supports \strong{constrained ordinations} (\code{RDA}, \code{CCA}, \code{db-RDA}). For plotting passively fitted environmental variables on an unconstrained plot, use \code{\link[gordi]{gordi_corr}}. 
-#'   \item The calculation of interaction scores involving continuous variables is only fully supported when the ordination was run with \strong{\code{scaling = 'species'}}
-#'   }
+#' @section Constraints:
+#' The function only supports \strong{constrained ordinations} (\code{RDA}, \code{CCA}, \code{db-RDA}).
+#' For plotting passively fitted environmental variables on an unconstrained plot, use
+#' \code{gordi_corr()}.
 #' 
-#' 
-#' @examples 
+#' #' @examples 
 #' library(vegan)
 #' 
 #' data(dune)
@@ -103,7 +91,7 @@
 #'    gordi_species(label = F) |>
 #'    # Predictors (A1: continuous arrow, Management: categorical centroids)
 #'    # Colour is dynamically mapped to the 'score' column (biplot or centroid)
-#'    gordi_predict(show_label = T, scaling_coefficient = 1, colour = 'score', size = 4)
+#'    gordi_predict(scaling_coefficient = 1, colour = 'score', size = 4)
 #' 
 #' # --- 2. Example with an interaction term ---
 #' # The interaction term will be calculated post-hoc via envfit
@@ -116,8 +104,7 @@
 gordi_predict <- function(
     pass,
     scaling_coefficient = 0.9,
-    label = NULL,
-    custom_label = NULL,
+    label = c('label'),
     show_label = F,
     repel_label = F,
     colour = '',
@@ -134,26 +121,22 @@ gordi_predict <- function(
     stop("You provided an unconstrained ordination. Predictors can't be displayed. If you want to passively plot environmental variables, try `gordi_corr()`.")
   }
   
-  
+
   ### ordination axis labels
   if(pass$type %in% c('DCA', 'NMDS')) {actual_labs <- paste0(pass$axis_names)} else
   {actual_labs <- paste0(pass$axis_names, " (", round(pass$explained_variation[pass$choices]*100, 1), "%)")}
-  
-  ### labels of variables
-  valid_labels <- c('variable_level', 'variable', 'level', 'custom')
-  label <- match.arg(label, choices = valid_labels)
-  
-  
+
+
   ### which variables do what
   term_labels <- attr(terms(pass$m), "term.labels")
   
   main_terms <- term_labels[!str_detect(term_labels, ':')]
   inter_terms <- term_labels[str_detect(term_labels, ':')]
-  
+
   # check
-  #pass$main_terms <- main_terms 
-  #pass$inter_terms <- inter_terms
-  
+  pass$main_terms <- main_terms 
+  pass$inter_terms <- inter_terms
+
   
   ### --- MAIN TERMS ---
   main_terms_scores <- scores(pass$m,
@@ -169,63 +152,32 @@ gordi_predict <- function(
   # create NULL objects
   factor_scores <- NULL
   vector_scores <- NULL
-  
+ 
   # create a tibble with centroid scores
   if (!is.null(main_terms_scores |> filter(score == 'centroids'))) {
-    factor_scores <- main_terms_scores |>
-      rename(variable_level = label) |> 
-      filter(score == 'centroids') |> 
-      mutate(variable = stringr::str_extract(
-        variable_level,
-        pattern = paste(main_terms, collapse = '|')
-        )) |> 
-      mutate(level = stringr::str_replace(
-        variable_level, 
-        pattern = variable,
-        replacement = ''
-        )) |> 
-      mutate(variable_level = paste0(variable, '-', level)) |> 
-      relocate(c(variable, level, variable_level), .after = score)
+    factor_scores <- main_terms_scores |> filter(score == 'centroids')
   }
-  
+
   # create a tibble with arrow ends
   if (!is.null(main_terms_scores |> filter(score == 'biplot'))) {
-    vector_scores <- main_terms_scores |> 
-      filter(score == 'biplot') |> 
-      rename(variable_level = label) |>
-      mutate(variable = stringr::str_extract(
-        variable_level,
-        pattern = paste(main_terms, collapse = '|')
-        )) |>
-      mutate(level = variable) |>
-      mutate(variable_level = variable) |>
-      relocate(c(variable, level, variable_level), .after = score)
-    }
-  
-  #pass$factor_scores <- factor_scores
-  #pass$vector_scores <- vector_scores
-  
-  
+    vector_scores <- main_terms_scores |> filter(score == 'biplot')
+  }
+
   
   ### --- INTERACTION TERMS ---
   vector_inter_scores <- tibble::tibble()
   factor_inter_scores <- tibble::tibble()
   
-  interaction_table <- tibble::tibble(
-    inter_ID = character(),
-    inter_var = character(),
-    variable = character(),
-    var_class = character()
-)
-  
+  interaction_table <- tibble::tibble()
+
   if (length(inter_terms) > 0) {
-    
-    warning('Interaction scores containing vector variables are fitted post-hoc via envfit as `lc` scores.\n Factor interactions are calculated as centroids of site LC scores for each combination of levels.')
+
+    warning('All interaction scores are fitted post-hoc via envfit as `lc` scores.')
     
     if (is.null(pass$env)) {
       stop('If you want to display interactions, you have to provide env table to the `gordi_read()`.')
     }
-    
+
     # what interacts with what
     interaction_table <- inter_terms |>
       str_split(pattern = ":") |>
@@ -243,19 +195,17 @@ gordi_predict <- function(
         TRUE ~ class(pass$env[[variable]])[1])
       ) |>
       ungroup()
-    
+
   }
   
-  #pass$interaction_table <- interaction_table
-  
-  
-  ### --- FOR LOOP ---
+  pass$interaction_table <- interaction_table
 
-  interaction_df_vct <- NULL 
-  factor_inter_scores <- NULL
 
+  ### --- FOR LOOP to obtain interaction scores ---
+  interaction_df <- tibble(.rows = nrow(pass$env)) # here, interaction_df is created as an empty tibble, with the correct number of rows, but no columns
+  
   if (length(inter_terms) > 0) {           
-
+    
     for (i in pull(distinct(interaction_table, inter_ID))) {
 
       # prepare a vector with all interaction terms
@@ -269,229 +219,112 @@ gordi_predict <- function(
         select(all_of(inter)) |>
         map_chr(class)
 
-
+  
       # object to hold the result of the current iteration
-      current_df_vct <- NULL
-      current_df_fct <- NULL 
+      current_df <- NULL
 
       # --- NUMERIC x NUMERIC ---
       if (all(inter_class %in% c('numeric', 'integer', 'double'))) {
-        current_df_vct <- as_tibble(pass$env[,inter[1]] * pass$env[,inter[2]]) # multiply interacting predictors
-        colnames(current_df_vct) <- paste(inter[1], inter[2], sep = ':')       #
-      }
-  
-  
-      # --- NUMERIC x FACTOR/CHARACTER ---
-      if (any(inter_class %in% c('character', 'factor')) &&
+        current_df <- as_tibble(pass$env[,inter[1]] * pass$env[,inter[2]]) # multiply interacting predictors
+        colnames(current_df) <- paste(inter[1], inter[2], sep = ':')       # 
+
+        # --- NUMERIC x FACTOR/CHARACTER ---
+      } else if (any(inter_class %in% c('character', 'factor')) &&
                  any(inter_class %in% c('numeric', 'integer', 'double'))) {
 
         inter_df_vct <- NULL
         inter_df_fct <- NULL
 
-        if (inter_class[1] %in% c('character', 'factor')) {
-          inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[1]]) |> select(-1)
-        } else {
-          inter_df_vct <- pass$env[,inter[1]]
-        }
+          if (inter_class[1] %in% c('character', 'factor')) {
+            inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[1]]) |> select(-1)
+          } else {
+            inter_df_vct <- pass$env[,inter[1]]
+          }
+  
+          if (inter_class[2] %in% c('character', 'factor')) {
+            inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[2]]) |> select(-1)
+          } else {
+            inter_df_vct <- pass$env[,inter[2]]
+          }
 
-        if (inter_class[2] %in% c('character', 'factor')) {
-          inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[2]]) |> select(-1)
-        } else {
-          inter_df_vct <- pass$env[,inter[2]]
-        }
+        current_df <- as_tibble(as.vector(inter_df_vct) * as.data.frame(inter_df_fct))
+        names(current_df) <- paste(names(inter_df_vct), names(inter_df_fct), sep = ":")
 
-        current_df_vct <- as_tibble(as.vector(inter_df_vct) * as.data.frame(inter_df_fct))
-        names(current_df_vct) <- paste(names(inter_df_vct), names(inter_df_fct), sep = ":")
-      }
-      
-      
-      if (is.null(interaction_df_vct)) {
-        interaction_df_vct <- current_df_vct
-      } else {
-        interaction_df_vct <- bind_cols(interaction_df_vct, current_df_vct)
-      }
-      
-      
-      # --- FACTOR/CHARACTER x FACTOR/CHARACTER ---
-      # in this case, it will calculate directly the centroids of LC site scores
-      # for each level combination
-      
-      if (all(inter_class %in% c('character', 'factor'))) {
+        # --- FACTOR/CHARACTER x FACTOR/CHARACTER ---
+      } else if (all(inter_class %in% c('character', 'factor'))) {
         var1_name <- inter[1]
         var2_name <- inter[2]
 
         final_col_name <- paste(var1_name, var2_name, sep = ":")
 
-        current_df_fct <- scores(dbrda1,
-                                 choices = pass$choices,
-                                 scaling = pass$scaling,
-                                 correlation = pass$correlation,
-                                 hill = pass$hill,
-                                 const = pass$const,
-                                 tidy = T) |>
-          as_tibble() |>
-          filter(score == 'constraints') |>
-          bind_cols(env) |>
-          group_by(pick(all_of(c(var1_name, var2_name)))) |>
-          summarise(CAP1 = mean(CAP1, na.rm = T),
-                    CAP2 = mean(CAP2, na.rm = T)) |>
-          ungroup() |>
-          unite({{final_col_name}}, where(is.character), sep = ':') |>
-          relocate(c(CAP1, CAP2), .before = 1) |> 
-          pivot_longer(-where(is.numeric), names_to = 'interacting_variables', values_to = 'level_combinations') |> 
-          rename(variable = interacting_variables,
-                 level = level_combinations) |> 
-          mutate(score = 'centroids') |> 
-          separate_wider_delim(variable, delim = ':', names = c('var1', 'var2')) |> 
-          separate_wider_delim(level, delim = ':', names = c('level1', 'level2')) |> 
-          mutate(variable = paste0(var1, ":", var2),
-                 level = paste0(level1, ":", level2),
-                 variable_level = paste0(var1, '-', level1, ":", var2, "-", level2)
-                 ) |> 
-          select(-c(var1, var2, level1, level2))
+        current_df <- pass$env |>
+          mutate(
+            interaction_term = paste(
+              paste0(var1_name, "_", pass$env[[var1_name]]),
+              paste0(var2_name, "_", pass$env[[var2_name]]),
+              sep = ":")) |>
+          select(interaction_term) |>
+          setNames(final_col_name)
       }
 
 
-      if (is.null(factor_inter_scores)) {
-        factor_inter_scores <- current_df_fct
+      if (is.null(interaction_df)) {
+        interaction_df <- current_df
       } else {
-        factor_inter_scores <- bind_cols(factor_inter_scores, current_df_fct)
+        interaction_df <- bind_cols(interaction_df, current_df)
       }
 
     }
 
   } # end of if() that starts before forloop
-   
-  #pass$interaction_df_vct <- interaction_df_vct
-  #pass$factor_inter_scores <- factor_inter_scores
+  
+  pass$interaction_df <- interaction_df
 
-  
-  # --- CACULATE ENVFIT ---
-  ### for interactions containing vector only
-  vector_inter_scores <- NULL
-  
-  if (!is_empty(interaction_df_vct)) { 
-    
-    if (pass$scaling %in% c('si', 'sites', 'sym', 'symm', 'symmetric')) {
-      stop('Correct calculation of scores of interactions which include at least one vector variable is currently possible only for scaling = `species`.')
-    }
    
-    if (pass$scaling %in% c('sp', 'spe', 'species')) {
-    
-    inter_ef <- envfit(pass$m, env = interaction_df_vct,
+  # --- CACULATE ENVFIT ---
+  if (length(inter_terms) > 0) {
+    inter_ef <- envfit(pass$m, env = interaction_df,
                        display = 'lc',
                        scaling = pass$scaling,
                        choices = pass$choices,
-                       correlation = pass$correlation,
-                       hill = pass$hill)
-    
-    vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |> 
-      relocate(where(is.numeric), .before = 1) |> 
-      mutate(variable = stringr::str_extract(
-        variable_level,
-        pattern = paste(inter_terms, collapse = '|')
-        )) |> 
-      mutate(level = stringr::str_replace(
-        variable_level, 
-        pattern = variable,
-        replacement = ''
-        )) |> 
-      mutate(score = 'biplot') |> 
-      separate_wider_delim(variable, delim = ':', names = c('var1', 'var2')) |>
-      mutate(lvl2 = str_remove(level, '_')) |> 
-      mutate(variable = paste0(var1, ":", var2),
-             level = paste0(var1, ":", var2, '-', lvl2),
-             variable_level = paste0(var1, ":", var2, '-', lvl2)
-             ) |> 
-      select(-c(var1, var2, lvl2)) |> 
-      relocate(c(score, variable, level, variable_level), .after = 2) |> 
-      mutate(across(c(level, variable_level), ~ str_remove(.x, '-$')))
-     
-    } else if (pass$scaling %in% c('no', 'non', 'none')) {
-      
-    inter_ef <- envfit(pass$m, env = interaction_df_vct,
-                       display = 'lc',
-                       scaling = pass$scaling,
-                       choices = pass$choices,
-                       correlation = pass$correlation,
-                       hill = pass$hill)
-      
-    vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |> 
-      relocate(where(is.numeric), .before = 1) |> 
-      mutate(variable = stringr::str_extract(
-        variable_level,
-        pattern = paste(inter_terms, collapse = '|')
-        )) |> 
-      mutate(level = stringr::str_replace(
-        variable_level, 
-        pattern = variable,
-        replacement = ''
-        )) |> 
-      mutate(score = 'biplot') |> 
-      separate_wider_delim(variable, delim = ':', names = c('var1', 'var2')) |>
-      mutate(lvl2 = str_remove(level, '_')) |> 
-      mutate(variable = paste0(var1, ":", var2),
-             level = paste0(var1, ":", var2, '-', lvl2),
-             variable_level = paste0(var1, ":", var2, '-', lvl2)
-             ) |> 
-      select(-c(var1, var2, lvl2)) |> 
-      relocate(c(score, variable, level, variable_level), .after = 2) |> 
-      mutate(across(c(level, variable_level), ~ str_remove(.x, '-$')))
-     
-    }
+                       correlation = pass$correlation)
+
+    var1_name <- inter[1]
+    var2_name <- inter[2]
+
+    vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'label')
+    factor_inter_scores <- as_tibble(scores(inter_ef, display = 'cn'), rownames = 'label')
+
+    vector_inter_scores <- vector_inter_scores |>
+      dplyr::mutate(
+        level = stringr::str_remove(label, "^\\:?\\.?data\\_"), # Extracts just the level (e.g., "BF")
+        label = paste0(var1_name, ":", var2_name, level) # Constructs 'A1:ManagementBF'
+      ) |>
+      dplyr::select(-level)
 
   }
   
-  #pass$vector_inter_scores <- vector_inter_scores
   
-
   # --- MERGE PREDICTOR TABLES together ---
   lst <- list(
-    vector_scores = if (!is.null(vector_scores)) {
-      vector_scores |> mutate(class = "vector")
-      } else {NULL},
-    factor_scores = if (!is.null(factor_scores)) {
-      factor_scores |> mutate(class = "factor")
-      } else {NULL},
+    factor_scores = factor_scores |> mutate(score = "factor_scores"),
+    vector_scores = vector_scores |> mutate(score = "vector_scores"),
     vector_inter_scores = if (!is.null(vector_inter_scores)) {
-      vector_inter_scores |> mutate(class = "vector_interaction")
-    } else {NULL},
+            vector_inter_scores |> mutate(score = "vector_inter_scores")
+                } else {NULL},
     factor_inter_scores = if (!is.null(factor_inter_scores)) {
-      factor_inter_scores |> mutate(class = "factor_interaction")
-    } else {NULL} ) |>
+            factor_inter_scores |> mutate(score = "factor_inter_scores")
+                } else {NULL} ) |>
     purrr::keep(~ !is.null(.x))
-  
+
   predictor_scores <- lst |>
-    imap_dfr(~ .x |> mutate(class = .y))
+    imap_dfr(~ .x |> mutate(score = .y))
 
   pass$predictor_scores <- predictor_scores |>
     rename(Axis_pred1 = 1,
-           Axis_pred2 = 2) |> 
-    relocate(class, .after = score)
-  
-  
-  
-  ### --- ADD CUSTOM LABELS --- ###
-  if (label == 'custom') {
-    
-    if (is.null(custom_label)) {
-      stop("If 'label' is set to 'custom', the 'custom_label' argument must be provided.")
-      
-    } else if (length(custom_label) != nrow(pass$predictor_scores)) {
-      
-      stop(paste0('The length of `custom label` (',
-             length(custom_label),
-             ' elements) must match the number of rows in `pass$predictor_scores` (',
-             nrow(pass$predictor_scores), ' rows).'))
-    } else {
-      pass$predictor_scores <- pass$predictor_scores |> 
-        bind_cols(
-          tibble(custom = custom_label)
-        )
-      }
-  }
-  
-  pass$predictor_names <- pass$predictor_scores[[label]]
+           Axis_pred2 = 2)
+
+
 
   ### --- PLOTTING ---
 
@@ -539,7 +372,7 @@ gordi_predict <- function(
 
   ### Set scaling coefficient
   # extract plot frame size (x and y axis lengths)
-  vct_tbl <- pred_df |> filter(str_detect(score, 'biplot'))
+  vct_tbl <- pred_df |> filter(str_detect(score, 'vector'))
 
   if (nrow(vct_tbl) > 0) {
     p_build <- ggplot_build(p)
@@ -595,9 +428,9 @@ gordi_predict <- function(
 
 
   ### Add ARROWS to plot
-  if (!is.null(pred_df |> filter(str_detect(score, 'biplot')))) {
+  if (!is.null(pred_df |> filter(str_detect(score, 'vector')))) {
     p <- p + do.call(geom_segment,
-                     c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                     c(list(data = pred_df |> filter(str_detect(score, 'vector')),
                             mapping = do.call(aes, aes_args_segment)),
                        const_args_segment))
 
@@ -623,13 +456,13 @@ gordi_predict <- function(
 
       if (isTRUE(repel_label)){
         p <- p + do.call(ggrepel::geom_text_repel,
-                         c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                         c(list(data = pred_df |> filter(str_detect(score, 'vector')),
                                 mapping = do.call(aes, aes_args_text)),
                            const_args_text))
 
       } else {
         p <- p + do.call(geom_text,
-                         c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                         c(list(data = pred_df |> filter(str_detect(score, 'vector')),
                                 mapping = do.call(aes, aes_args_text)),
                            const_args_text))
       }
@@ -668,10 +501,10 @@ gordi_predict <- function(
 
 
   ### Add POINTS to plot
-  if (!is.null(pred_df |> filter(str_detect(score, 'centroids')))) {
+  if (!is.null(pred_df |> filter(str_detect(score, 'factor')))) {
 
     p <- p + do.call(geom_point,
-                     c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                     c(list(data = pred_df |> filter(str_detect(score, 'factor')),
                             mapping = do.call(aes, aes_args_point)),
                        const_args_point))
 
@@ -698,12 +531,12 @@ gordi_predict <- function(
 
       if (isTRUE(repel_label)){
         p <- p + do.call(ggrepel::geom_text_repel,
-                         c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                         c(list(data = pred_df |> filter(str_detect(score, 'factor')),
                                 mapping = do.call(aes, aes_args_text)),
                            const_args_text))
       } else {
         p <- p + do.call(ggrepel::geom_text_repel,
-                         c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                         c(list(data = pred_df |> filter(str_detect(score, 'factor')),
                                 mapping = do.call(aes, aes_args_text)),
                            const_args_text))
       }
@@ -714,7 +547,7 @@ gordi_predict <- function(
 
   pass$plot <- p
 
-
+  
   return(pass)
   
 }
