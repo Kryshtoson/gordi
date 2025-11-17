@@ -171,15 +171,15 @@ gordi_label <- function(pass,
         str_squish()|>
         str_split('\\s+')#str_split(spe_df[[1]], '\\s')
       # remove tokens like Sect., sect.... 
-      rank_tokens <- c('sect\\.?', 'Sect\\.?', 'cf\\.?', 'agg\\.?')
+      rank_tokens <- c('sect\\.?', 'Sect\\.?', 'cf\\.?', 'agg\\.?', 'aff\\.?')
       rx_drop <- regex(paste0('^(', paste(rank_tokens,  collapse = '|'), ')$'))
       parts_list <- lapply(parts_list, function (x) x[!str_detect(x, rx_drop)])
       # detect subspecies and take epithet after it
-      rx_sub <- regex('^(subsp\\.?|ssp\\.?|var\\.?)$')
+      rx_sub <- regex('^(subsp\\.?|ssp\\.?|var\\.?|f\\.?)$')
       has_sub <- vapply(parts_list, function (x) any(str_detect(x, rx_sub)), logical (1))
       # individual genus, species, subspecies
       genus <- map_chr(parts_list, 1)
-      epithet <- map_chr(parts_list, 2)
+      epithet <- vapply(parts_list, function (x) if (length(x) >= 2) x[2] else NA_character_, character(1))
       subsp <- vapply(parts_list, function (x) { i <- match(TRUE, str_detect(x, rx_sub))
       x[i + 1L]}, character(1))
       # shortcuts based on shortcut_length
@@ -188,43 +188,43 @@ gordi_label <- function(pass,
       subN <- str_sub(subsp, 1, shortcut_length)
       
       if(shortcut == 'upper.lower') {
-        short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '.')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_lower(sN), sep = '.'))
         short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
       } else if(shortcut == 'lower.lower'){
-        short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '.')
+        short_non <- ifelse(is.na(sN), str_to_lower(gN), str_c(str_to_lower(gN), str_to_lower(sN), sep = '.'))
         short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '.')
       } else if(shortcut == 'upper.upper'){
-        short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '.')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_title(sN), sep = '.'))
         short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '.')
       } else if(shortcut == 'upperupper'){
-        short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_title(sN), sep = ''))
         short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '')
       } else if(shortcut == 'upper_lower'){
-        short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '_')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_lower(sN), sep = '_'))
         short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
       } else if(shortcut == 'lower_lower'){
-        short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '_')
+        short_non <- ifelse(is.na(sN), str_to_lower(gN), str_c(str_to_lower(gN), str_to_lower(sN), sep = '_'))
         short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '_')
       } else if(shortcut == 'upper_upper'){
-        short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '_')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_title(sN), sep = '_'))
         short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '_')
       } else if(shortcut == 'upper*lower'){
-        short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '*')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_lower(sN), sep = '*'))
         short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
       } else if(shortcut == 'lower*lower'){
-        short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '*')
+        short_non <- ifelse(is.na(sN), str_to_lower(gN), str_c(str_to_lower(gN), str_to_lower(sN), sep = '*'))
         short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '*')
       } else if(shortcut == 'upper*upper'){
-        short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '*')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_title(sN), sep = '*'))
         short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '*')
       } else if(shortcut == 'upper-lower'){
-        short_non <- str_c(str_to_title(gN), str_to_lower(sN), sep = '-')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_lower(sN), sep = '-'))
         short_sub <- str_c(str_to_title(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
       } else if(shortcut == 'lower-lower'){
-        short_non <- str_c(str_to_lower(gN), str_to_lower(sN), sep = '-')
+        short_non <- ifelse(is.na(sN), str_to_lower(gN), str_c(str_to_lower(gN), str_to_lower(sN), sep = '-'))
         short_sub <- str_c(str_to_lower(gN), str_to_lower(sN), 'ssp', str_to_lower(subN), sep = '-')
       } else if(shortcut == 'upper-upper'){
-        short_non <- str_c(str_to_title(gN), str_to_title(sN), sep = '-')
+        short_non <- ifelse(is.na(sN), str_to_title(gN), str_c(str_to_title(gN), str_to_title(sN), sep = '-'))
         short_sub <- str_c(str_to_title(gN), str_to_title(sN), 'ssp', str_to_title(subN), sep = '-')
       } else {
         warning("Unknown 'shortcut': ", shortcut, ' -> No short name created.')
