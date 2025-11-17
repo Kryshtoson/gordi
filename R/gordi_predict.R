@@ -322,7 +322,7 @@ gordi_predict <- function(
 
         final_col_name <- paste(var1_name, var2_name, sep = ":")
 
-        current_df_fct <- scores(dbrda1,
+        current_df_fct <- scores(pass$m,
                                  choices = pass$choices,
                                  scaling = pass$scaling,
                                  correlation = pass$correlation,
