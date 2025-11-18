@@ -45,7 +45,7 @@
 #' 
 #' @param pass A list object produced by [gordi_read()]
 #' @param what Character; which labels to draw/edit: one of \code{c('species', 'sites', 'predictor')}.
-#' @param label Character; a column in env dataframe for sites or column name in env table for predictors are used for site and predictor labels, species name are column of names from \code{pass$species_name} - this cannot be changed.
+#' @param label Character; for site labels a column in env dataframe is used, for predictor labels, you can choose from columns in \code{pass$predictor_scores} or \code{pass$predictor_names}, default predictor labels is a column from \code{pass$predictor_names}, species names are a column of names from \code{pass$species_name} - this cannot be changed.
 #' @param label_colour Character; colour for non-shortcut labels (constant or column name).
 #' @param shortcut Character; creates shortcuts of species names (for \code{what = 'species'} only).
 #' @param shortcut_colour Character; colour for shortcut labels (constant or column name).
@@ -396,8 +396,8 @@ gordi_label <- function(pass,
     
     pred_df <- bind_cols(pass$predictor_scores, pass$predictor_names)
     p <- remove_label_layers_for(p, "Axis_pred1")
-    labcol <- if(!identical(label, '') && label == names(pred_df)[3]){
-      label}  else {names(pred_df)[3]}
+    labcol <- if(!identical(label, '') && label %in% names(pred_df)){
+      label}  else {names(pass$predictor_names)}
     
     p_build <- ggplot_build(p)
     
