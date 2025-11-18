@@ -145,7 +145,10 @@ gordi_predict <- function(
   
   
   ### which variables do what
-  term_labels <- attr(terms(pass$m), "term.labels")
+  term_labels <- attr(terms(pass$m), "term.labels") |> 
+    as_tibble() |>
+    mutate(value = gsub("as\\.factor\\((.*?)\\)", "\\1", value)) |> 
+    pull()
   
   main_terms <- term_labels[!str_detect(term_labels, ':')]
   inter_terms <- term_labels[str_detect(term_labels, ':')]
@@ -164,7 +167,8 @@ gordi_predict <- function(
                               const = pass$const,
                               tidy = T) |>
     as_tibble() |>
-    filter(score %in% c('biplot', 'centroids') & !str_detect(label, ':'))
+    filter(score %in% c('biplot', 'centroids') & !str_detect(label, ':')) |>   
+    mutate(label = gsub("as\\.factor\\((.*?)\\)", "\\1", label)) 
   
   # create NULL objects
   factor_scores <- NULL
@@ -491,7 +495,7 @@ gordi_predict <- function(
       }
   }
   
-  pass$predictor_names <- pass$predictor_scores[[label]]
+  pass$predictor_names <- tibble(predictor_names = pass$predictor_scores[[label]])
 
   ### --- PLOTTING ---
 
