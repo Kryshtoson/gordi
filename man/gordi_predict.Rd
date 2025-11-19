@@ -34,8 +34,6 @@ applies only to vector variables (arrows).}
 \item{label}{The column name in the \code{pass$predictor_scores} tibble to use for text labels. Options are:
 \itemize{
   \item \code{'variable_level'} (Default): Combines variable name and variable level (for categorical variables).
-  \item \code{'variable'}: Just variable names.
-  \item \code{'level'}: Variable names for continuous variables and just level names for categorical variables (might be better option than the default when the labels are too long.)
   \item \code{'custom'}: Uses the labels provided in the \code{custom_labels} argument.
 }}
 
@@ -68,7 +66,7 @@ or a constant numeric value (e.g., \code{16} for a solid circle).}
 \item{size}{Aesthetic for the point size (categorical predictors). Accepts column names
 or a constant numeric value.}
 
-\item{arrow_size}{A numeric value defining the size of the arrowhead in **cm** (used with
+\item{arrow_size}{A numeric value defining the size of the arrowhead in \strong{cm} (used with
 \code{unit()} from the \code{grid} package).}
 }
 \value{

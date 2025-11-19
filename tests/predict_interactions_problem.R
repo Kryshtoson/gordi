@@ -30,7 +30,7 @@ dbrda1 <- capscale(spe ~ slope + carbon + alt_class + ph_class +
                    sqrt.dist = T, distance = 'bray',
                    data = env)
 
-dbrda1 <- capscale(spe ~ slope + elevation + slope:elevation + ph_class:alt_class + Condition(ph_class + alt_class),
+dbrda1 <- capscale(spe ~ slope + carbon + slope:carbon + alt_class + elevation + Condition(annual_temperature),
                    sqrt.dist = T, distance = 'bray',
                    data = env)
 
@@ -59,12 +59,13 @@ gordi_read(dbrda1, scaling = 'spe', correlation = T, env = env, spe = spe, const
 gordi_read(cca1, scaling = 'spe', correlation = T, env = env, spe = spe) |> 
   gordi_species(size = 1) |> 
   gordi_sites(size = 1) |> 
-  gordi_predict2(show_label = T) 
+  gordi_predict(show_label = T) 
+
 
 gordi_read(rda1, scaling = 'spe', correlation = F, env = env, spe = spe) |> 
   gordi_species(size = 1) |> 
   #gordi_sites(size = 1) |> 
-  gordi_predict2(show_label = T) 
+  gordi_predict(show_label = T, colour = 'class') 
 
 
 
