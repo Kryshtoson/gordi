@@ -5,7 +5,7 @@
 #' Similarly to [gordi_species()] and [gordi_sites()], a wide range of graphing parameters can be set,
 #' such as colour, fill, size, shape, alpha, stroke, and more traditional ggplot arguments, which can read
 #' both, static and dynamic variable (e.g., 'red' or 'elevation').
-#' 
+#'
 #' @details
 #' \itemize{
 #'   \item Continuous variables are plotted as \strong{arrows} (biplot scores). The length of the
