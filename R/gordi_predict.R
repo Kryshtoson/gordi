@@ -255,6 +255,7 @@ gordi_predict <- function(
         map_chr(class)
 
 
+      
       # object to hold the result of the current iteration
       current_df_vct <- NULL
       current_df_fct <- NULL 
