@@ -157,6 +157,12 @@ gordi_predict <- function(
   
   
   ### --- MAIN TERMS ---
+  # NOTE: vegan::scores(..., tidy = TRUE) does not guarantee column order across
+  # versions/methods (numeric axis columns vs. `score`/`label` columns can come
+  # first or last depending on the vegan version). We explicitly force the
+  # numeric axis columns to the front right after extraction, so downstream
+  # positional operations (rename(... = 1), across(.cols = c(1,2))) are safe
+  # regardless of what order vegan hands back.
   main_terms_scores <- scores(pass$m,
                               scaling = pass$scaling,
                               choices = pass$choices,
@@ -174,18 +180,18 @@ gordi_predict <- function(
   vector_scores <- NULL
   
   # create a tibble with centroid scores
-  if (!is.null(main_terms_scores |> filter(score == 'centroids'))) {
+  if (nrow(main_terms_scores |> filter(score == 'centroids')) > 0) {
     factor_scores <- main_terms_scores |>
       rename(variable_level = label) |> 
       filter(score == 'centroids') 
   }
   
   # create a tibble with arrow ends
-  if (!is.null(main_terms_scores |> filter(score == 'biplot'))) {
+  if (nrow(main_terms_scores |> filter(score == 'biplot')) > 0) {
     vector_scores <- main_terms_scores |> 
       filter(score == 'biplot') |> 
       rename(variable_level = label) 
-    }
+  }
   
   # check
   #pass$factor_scores <- factor_scores
@@ -202,7 +208,7 @@ gordi_predict <- function(
     inter_var = character(),
     variable = character(),
     var_class = character()
-)
+  )
   
   if (length(inter_terms) > 0) {
     
@@ -236,57 +242,57 @@ gordi_predict <- function(
   
   
   ### --- FOR LOOP ---
-
+  
   interaction_df_vct <- NULL 
   factor_inter_scores <- NULL
-
+  
   if (length(inter_terms) > 0) {           
-
+    
     for (i in pull(distinct(interaction_table, inter_ID))) {
-
+      
       # prepare a vector with all interaction terms
       inter <- interaction_table |>
         filter(inter_ID == i) |>
         select(variable) |>
         pull()
-
+      
       # find out which class is which variable
       inter_class <- pass$env |>
         select(all_of(inter)) |>
         map_chr(class)
-
-
+      
+      
       
       # object to hold the result of the current iteration
       current_df_vct <- NULL
       current_df_fct <- NULL 
-
+      
       # --- NUMERIC x NUMERIC ---
       if (all(inter_class %in% c('numeric', 'integer', 'double'))) {
         current_df_vct <- as_tibble(pass$env[,inter[1]] * pass$env[,inter[2]]) # multiply interacting predictors
         colnames(current_df_vct) <- paste(inter[1], inter[2], sep = ':')       #
       }
-  
-  
+      
+      
       # --- NUMERIC x FACTOR/CHARACTER ---
       if (any(inter_class %in% c('character', 'factor')) &&
           any(inter_class %in% c('numeric', 'integer', 'double'))) {
-
+        
         inter_df_vct <- NULL
         inter_df_fct <- NULL
-
+        
         if (inter_class[1] %in% c('character', 'factor')) {
           inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[1]]) |> select(-1)
         } else {
           inter_df_vct <- pass$env[,inter[1]]
         }
-
+        
         if (inter_class[2] %in% c('character', 'factor')) {
           inter_df_fct <- fastDummies::dummy_cols(pass$env[,inter[2]]) |> select(-1)
         } else {
           inter_df_vct <- pass$env[,inter[2]]
         }
-
+        
         current_df_vct <- as_tibble(as.vector(inter_df_vct) * as.data.frame(inter_df_fct))
         
         if (inter_class[1] %in% c('character', 'factor')) {
@@ -312,9 +318,9 @@ gordi_predict <- function(
       if (all(inter_class %in% c('character', 'factor'))) {
         var1_name <- inter[1]
         var2_name <- inter[2]
-
+        
         final_col_name <- paste(var1_name, var2_name, sep = ":")
-
+        
         current_df_fct <- scores(pass$m,
                                  choices = pass$choices,
                                  scaling = pass$scaling,
@@ -323,12 +329,12 @@ gordi_predict <- function(
                                  const = pass$const,
                                  tidy = T) |>
           as_tibble() |>
-          relocate(where(is.numeric), .before = 1) |> 
+          relocate(where(is.numeric), .before = 1) |>
           filter(score == 'constraints') |>
           bind_cols(pass$env) |>
           group_by(pick(all_of(c(var1_name, var2_name)))) |>
           summarize(across(.cols = c(1, 2), # Select columns by their position (1st and 2nd)
-                   .fns = ~ mean(.x, na.rm = TRUE))) |>
+                           .fns = ~ mean(.x, na.rm = TRUE))) |>
           ungroup() |>
           unite({{final_col_name}}, where(~ is.character(.x) | is.factor(.x)), sep = ':') |>
           relocate(c(1, 2), .before = 1) |> 
@@ -341,343 +347,343 @@ gordi_predict <- function(
           mutate(variable_level = paste0(var1, level1, ":", var2, level2)) |>
           select(-c(var1, var2, level1, level2))
       }
-
-
+      
+      
       if (is.null(factor_inter_scores)) {
         factor_inter_scores <- current_df_fct
       } else {
         factor_inter_scores <- bind_cols(factor_inter_scores, current_df_fct)
       }
-
+      
     }
-
+    
   } # end of if() that starts before forloop
-   
+  
   # check
   #pass$interaction_df_vct <- interaction_df_vct
   #pass$factor_inter_scores <- factor_inter_scores
-
-
+  
+  
   # --- CACULATE ENVFIT ---
   ### for interactions containing vector only
   vector_inter_scores <- NULL
-
+  
   if (!is_empty(interaction_df_vct)) {
-
+    
     if (pass$scaling %in% c('si', 'sites', 'sym', 'symm', 'symmetric')) {
       stop('Correct calculation of scores of interactions which include at least one vector variable is currently possible only for scaling = `species`.')
     }
-
+    
     if (pass$scaling %in% c('sp', 'spe', 'species')) {
-
-    inter_ef <- envfit(pass$m, env = interaction_df_vct,
-                       display = 'lc',
-                       scaling = pass$scaling,
-                       choices = pass$choices,
-                       correlation = pass$correlation,
-                       hill = pass$hill)
-
-    vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |>
-      relocate(where(is.numeric), .before = 1) |> 
-      mutate(score = 'biplot')
-
-     } else if (pass$scaling %in% c('no', 'non', 'none')) {
-
+      
+      inter_ef <- envfit(pass$m, env = interaction_df_vct,
+                         display = 'lc',
+                         scaling = pass$scaling,
+                         choices = pass$choices,
+                         correlation = pass$correlation,
+                         hill = pass$hill)
+      
+      vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |>
+        relocate(where(is.numeric), .before = 1) |> 
+        mutate(score = 'biplot')
+      
+    } else if (pass$scaling %in% c('no', 'non', 'none')) {
+      
       inter <- str_split(inter_terms, ":")[[1]]
       inter_class <- pass$env |>
         select(all_of(inter)) |>
         map_chr(class)
-
+      
       var1_is_factor <- inter_class[1] %in% c('character', 'factor')
       var2_is_factor <- inter_class[2] %in% c('character', 'factor')
-
-     inter_ef <- envfit(pass$m, env = interaction_df_vct,
-                        display = 'lc',
-                        scaling = pass$scaling,
-                        choices = pass$choices,
-                        correlation = pass$correlation,
-                        hill = pass$hill)
-
-    vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |>
-      relocate(where(is.numeric), .before = 1) |> 
-      mutate(score = 'biplot')
-
-   }
+      
+      inter_ef <- envfit(pass$m, env = interaction_df_vct,
+                         display = 'lc',
+                         scaling = pass$scaling,
+                         choices = pass$choices,
+                         correlation = pass$correlation,
+                         hill = pass$hill)
+      
+      vector_inter_scores <- as_tibble(scores(inter_ef, display = 'bp'), rownames = 'variable_level') |>
+        relocate(where(is.numeric), .before = 1) |> 
+        mutate(score = 'biplot')
+      
+    }
   }
   
   #
   #pass$vector_inter_scores <- vector_inter_scores
   
-   # --- MERGE PREDICTOR TABLES together ---
-   lst <- list(
-     vector_scores = if (!is.null(vector_scores)) {
-       vector_scores 
-       } else {NULL},
-     factor_scores = if (!is.null(factor_scores)) {
-       factor_scores 
-       } else {NULL},
-     vector_inter_scores = if (!is.null(vector_inter_scores)) {
-       vector_inter_scores 
-     } else {NULL},
-     factor_inter_scores = if (!is.null(factor_inter_scores)) {
-       factor_inter_scores
-     } else {NULL} ) |>
-     purrr::keep(~ !is.null(.x))
-
-   predictor_scores <- lst |>
-     imap_dfr(~ .x |> mutate(class = .y))
-
-   pass$predictor_scores <- predictor_scores |>
-     rename(Axis_pred1 = 1,
-            Axis_pred2 = 2) |>
-     relocate(class, .after = score)
-
-
-
-   ### --- ADD CUSTOM LABELS --- ###
-   if (label == 'custom') {
-
-     if (is.null(custom_label)) {
-       stop("If 'label' is set to 'custom', the 'custom_label' argument must be provided.")
-
-     } else if (length(custom_label) != nrow(pass$predictor_scores)) {
-
-       stop(paste0('The length of `custom label` (',
-              length(custom_label),
-              ' elements) must match the number of rows in `pass$predictor_scores` (',
-              nrow(pass$predictor_scores), ' rows).'))
-     } else {
-       pass$predictor_scores <- pass$predictor_scores |>
-         bind_cols(
-           tibble(custom = custom_label)
-         )
-       }
-   }
-
-   pass$predictor_names <- tibble(predictor_names = pass$predictor_scores[[label]])
-
-   ### --- PLOTTING ---
-
-   ### create df used for plotting
-   pred_df <- pass$predictor_scores
-
-   if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
-     p <- ggplot() +
-       theme_bw() +
-       geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
-       geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
-       labs(x = actual_labs[1], y = actual_labs[2]) +
-       theme(
-         text = element_text(size = 15),
-         panel.grid = element_blank(),
-         legend.justification = c(1, 1))
-   } else {p <- pass$plot}
-
-
-   ### Detect mapped vs constant aesthetics
-   # colour
-   # if colour != "" AND ALSO colour represents a colname present in corr_df, then map_colour is TRUE, otherwise is FALSE
-   map_colour <- !identical(colour, '') && (colour %in% names(pred_df))
-   # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
-   const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
-   # fill
-   map_fill <- !identical(fill, '') && (fill %in% names(pred_df))
-   const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours()) || (is.character(fill) && fill %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
-   # alpha
-   map_alpha <- !identical(alpha, '') && has_name(pred_df, alpha)
-   const_alpha <- !map_alpha && is.numeric(alpha)
-   # linetype
-   map_linetype <- !identical(linetype, '') && has_name(pred_df, linetype)
-   const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,''))
-   # linewidth
-   map_linewidth <- !identical(linewidth, '') && has_name(pred_df, linewidth)
-   const_linewidth <- !map_linewidth && is.numeric(linewidth)
-   # shape
-   map_shape <- !identical(shape, '') && has_name(pred_df, shape)
-   const_shape <- !map_shape && is.numeric(shape)
-   # size
-   map_size <- !identical(size, '') && has_name(pred_df, size)
-   const_size <- !map_size && is.numeric(size)
-
-
-   ### Set scaling coefficient
-   # extract plot frame size (x and y axis lengths)
-   vct_tbl <- pred_df |> filter(str_detect(score, 'biplot'))
-
-   if (nrow(vct_tbl) > 0) {
-     p_build <- ggplot_build(p)
-
-     plot_range <- c(xmin_plot = p_build$layout$panel_params[[1]]$x.range[1],
-                     xmax_plot = p_build$layout$panel_params[[1]]$x.range[2],
-                     ymin_plot = p_build$layout$panel_params[[1]]$y.range[1],
-                     ymax_plot = p_build$layout$panel_params[[1]]$y.range[2])
-
-     pred_range <- c(xmin_pred = min(vct_tbl[,1], na.rm = T),
-                     xmax_pred = max(vct_tbl[,1], na.rm = T),
-                     ymin_pred = min(vct_tbl[,2], na.rm = T),
-                     ymax_pred = max(vct_tbl[,2], na.rm = T))
-
-     coef <- (max(abs(plot_range)) / max(abs(pred_range))) * scaling_coefficient
-   } else {coef <- 1}
-
-
-   ### Prepare aes arguments for geom_segment()
-   # Start with fixed x/y for the base (0,0) and end at the species scores
-   aes_args_segment <- list(
-     x = 0, y = 0,
-     xend = expr(Axis_pred1 * !!coef),
-     yend = expr(Axis_pred2 * !!coef)
-   )
-
-   if(map_colour) aes_args_segment$colour <- sym(colour)
-   if(map_alpha) aes_args_segment$alpha <- sym(alpha)
-   if(map_linewidth) aes_args_segment$linewidth <- sym(linewidth)
-   if(map_linetype) aes_args_segment$linetype <- sym(linetype)
-
-
-   ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
-   const_args_segment <- list()
-
-   # Add constant arguments for geom_segment() if not mapped
-   # colour
-   if(!map_colour){
-     if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 2}}
-   # alpha
-   if(!map_alpha){
-     if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 1}}
-   # linetype
-   if(!map_linetype){
-     if(!identical(linetype, '')) {const_args_segment$linetype <- linetype} else {const_args_segment$linetype <- 1}}
-   # linewidth
-   if(!map_linewidth){
-     if(!identical(linewidth, '')) {const_args_segment$linewidth <- linewidth} else {const_args_segment$linewidth <- 1}}
-   # arrow_size (does not make sense to have map_arrow)
-   const_args_segment$arrow <- arrow(
-     length = unit(
-       if (!identical(arrow_size, '')) as.numeric(arrow_size) else 0.3, "cm"))
-
-
-   ### Add ARROWS to plot
-   if (!is.null(pred_df |> filter(str_detect(score, 'biplot')))) {
-     p <- p + do.call(geom_segment,
-                      c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
-                             mapping = do.call(aes, aes_args_segment)),
-                        const_args_segment))
-
-     if (isTRUE(show_label)){
-
-       aes_args_text <- list(
-         x = expr(Axis_pred1 * !!coef),
-         y = expr(Axis_pred2 * !!coef),
-         label = sym(label)
-       )
-
-       if(map_colour) aes_args_text$colour <- sym(colour)
-       if(map_alpha) aes_args_text$alpha <- sym(alpha)
-
-       ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
-       const_args_text <- list(
-         show.legend = F
-       )
-
-       if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
-       if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
-
-
-       if (isTRUE(repel_label)){
-         p <- p + do.call(ggrepel::geom_text_repel,
-                          c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
-                                 mapping = do.call(aes, aes_args_text)),
-                            const_args_text))
-
-       } else {
-         p <- p + do.call(geom_text,
-                          c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
-                                 mapping = do.call(aes, aes_args_text)),
-                            const_args_text))
-       }
-     }
-   }
-
-
-
-   ### Categorical variables
-
-   ### Prepare aes arguments for geom_point()
-   aes_args_point <- list(
-     x = sym("Axis_pred1"),
-     y = sym("Axis_pred2")
-   )
-
-   if(map_colour) aes_args_point$colour <- sym(colour)
-   if(map_fill) aes_args_point$fill <- sym(fill)
-   if(map_alpha) aes_args_point$alpha <- sym(alpha)
-   if(map_shape) aes_args_point$shape <- sym(shape)
-   if(map_size) aes_args_point$size <- sym(size)
-
-   ### Prepare constant arguments for geom_point()
-   const_args_point <- list()
-
-   if(!map_colour){
-     if(!identical(colour, '')) {const_args_point$colour <- colour} else {const_args_point$colour <- 2}}
-   if(!map_fill){
-     if(!identical(fill, '')) {const_args_point$fill <- fill} else {const_args_point$fill <- 2}}
-   if(!map_alpha){
-     if(!identical(alpha, '')) {const_args_point$alpha <- alpha} else {const_args_point$alpha <- 1}}
-   if(!map_shape){
-     if(!identical(shape, '')) {const_args_point$shape <- shape} else {const_args_point$shape <- 16}}
-   if(!map_size){
-     if(!identical(size, '')) {const_args_point$size <- size} else {const_args_point$size <- 2}}
-
-
-   ### Add POINTS to plot
-   if (!is.null(pred_df |> filter(str_detect(score, 'centroids')))) {
-
-     p <- p + do.call(geom_point,
-                      c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
-                             mapping = do.call(aes, aes_args_point)),
-                        const_args_point))
-
-
-     if (isTRUE(show_label)){
-
-       aes_args_text <- list(
-         x = sym("Axis_pred1"),
-         y = sym("Axis_pred2"),
-         label = sym(label)
-       )
-
-       if(map_colour) aes_args_text$colour <- sym(colour)
-       if(map_alpha) aes_args_text$alpha <- sym(alpha)
-
-       ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
-       const_args_text <- list(
-         show.legend = F
-       )
-
-       if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
-       if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
-
-
-       if (isTRUE(repel_label)){
-         p <- p + do.call(ggrepel::geom_text_repel,
-                          c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
-                                 mapping = do.call(aes, aes_args_text)),
-                            const_args_text))
-       } else {
-         p <- p + do.call(ggrepel::geom_text_repel,
-                          c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
-                                 mapping = do.call(aes, aes_args_text)),
-                            const_args_text))
-       }
-     }
-   }
-
-
-
-   pass$plot <- p
-
-
+  # --- MERGE PREDICTOR TABLES together ---
+  lst <- list(
+    vector_scores = if (!is.null(vector_scores)) {
+      vector_scores 
+    } else {NULL},
+    factor_scores = if (!is.null(factor_scores)) {
+      factor_scores 
+    } else {NULL},
+    vector_inter_scores = if (!is.null(vector_inter_scores)) {
+      vector_inter_scores 
+    } else {NULL},
+    factor_inter_scores = if (!is.null(factor_inter_scores)) {
+      factor_inter_scores
+    } else {NULL} ) |>
+    purrr::keep(~ !is.null(.x))
+  
+  predictor_scores <- lst |>
+    imap_dfr(~ .x |> mutate(class = .y))
+  
+  pass$predictor_scores <- predictor_scores |>
+    rename(Axis_pred1 = 1,
+           Axis_pred2 = 2) |>
+    relocate(class, .after = score)
+  
+  
+  
+  ### --- ADD CUSTOM LABELS --- ###
+  if (label == 'custom') {
+    
+    if (is.null(custom_label)) {
+      stop("If 'label' is set to 'custom', the 'custom_label' argument must be provided.")
+      
+    } else if (length(custom_label) != nrow(pass$predictor_scores)) {
+      
+      stop(paste0('The length of `custom label` (',
+                  length(custom_label),
+                  ' elements) must match the number of rows in `pass$predictor_scores` (',
+                  nrow(pass$predictor_scores), ' rows).'))
+    } else {
+      pass$predictor_scores <- pass$predictor_scores |>
+        bind_cols(
+          tibble(custom = custom_label)
+        )
+    }
+  }
+  
+  pass$predictor_names <- tibble(predictor_names = pass$predictor_scores[[label]])
+  
+  ### --- PLOTTING ---
+  
+  ### create df used for plotting
+  pred_df <- pass$predictor_scores
+  
+  if (is.null(pass$plot)) { # checks whether p exists in pass, if not it draws plot
+    p <- ggplot() +
+      theme_bw() +
+      geom_vline(aes(xintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      geom_hline(aes(yintercept = 0), linetype = 3, linewidth = 0.2, colour = 'gray15', alpha = 0.6) +
+      labs(x = actual_labs[1], y = actual_labs[2]) +
+      theme(
+        text = element_text(size = 15),
+        panel.grid = element_blank(),
+        legend.justification = c(1, 1))
+  } else {p <- pass$plot}
+  
+  
+  ### Detect mapped vs constant aesthetics
+  # colour
+  # if colour != "" AND ALSO colour represents a colname present in corr_df, then map_colour is TRUE, otherwise is FALSE
+  map_colour <- !identical(colour, '') && (colour %in% names(pred_df))
+  # if map_colour is FALSE AND ALSO the thing inputed in arguments is a HEX code or is included in colours() or in palette() (word or number), then use it as const_colour
+  const_colour <- !map_colour && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", colour) || colour %in% grDevices::colours()) || (is.character(colour) && colour %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
+  # fill
+  map_fill <- !identical(fill, '') && (fill %in% names(pred_df))
+  const_fill <- !map_fill && (grepl("^#(?:[A-Fa-f0-9]{6}[A-Fa-f0-9]{3})$", fill) || fill %in% grDevices::colours()) || (is.character(fill) && fill %in% palette()) || (is.numeric(colour) && colour %in% seq_along(palette()))
+  # alpha
+  map_alpha <- !identical(alpha, '') && has_name(pred_df, alpha)
+  const_alpha <- !map_alpha && is.numeric(alpha)
+  # linetype
+  map_linetype <- !identical(linetype, '') && has_name(pred_df, linetype)
+  const_linetype <- !map_linetype && (is.numeric(linetype) || !identical(linetype,''))
+  # linewidth
+  map_linewidth <- !identical(linewidth, '') && has_name(pred_df, linewidth)
+  const_linewidth <- !map_linewidth && is.numeric(linewidth)
+  # shape
+  map_shape <- !identical(shape, '') && has_name(pred_df, shape)
+  const_shape <- !map_shape && is.numeric(shape)
+  # size
+  map_size <- !identical(size, '') && has_name(pred_df, size)
+  const_size <- !map_size && is.numeric(size)
+  
+  
+  ### Set scaling coefficient
+  # extract plot frame size (x and y axis lengths)
+  vct_tbl <- pred_df |> filter(str_detect(score, 'biplot'))
+  
+  if (nrow(vct_tbl) > 0) {
+    p_build <- ggplot_build(p)
+    
+    plot_range <- c(xmin_plot = p_build$layout$panel_params[[1]]$x.range[1],
+                    xmax_plot = p_build$layout$panel_params[[1]]$x.range[2],
+                    ymin_plot = p_build$layout$panel_params[[1]]$y.range[1],
+                    ymax_plot = p_build$layout$panel_params[[1]]$y.range[2])
+    
+    pred_range <- c(xmin_pred = min(vct_tbl[,1], na.rm = T),
+                    xmax_pred = max(vct_tbl[,1], na.rm = T),
+                    ymin_pred = min(vct_tbl[,2], na.rm = T),
+                    ymax_pred = max(vct_tbl[,2], na.rm = T))
+    
+    coef <- (max(abs(plot_range)) / max(abs(pred_range))) * scaling_coefficient
+  } else {coef <- 1}
+  
+  
+  ### Prepare aes arguments for geom_segment()
+  # Start with fixed x/y for the base (0,0) and end at the species scores
+  aes_args_segment <- list(
+    x = 0, y = 0,
+    xend = expr(Axis_pred1 * !!coef),
+    yend = expr(Axis_pred2 * !!coef)
+  )
+  
+  if(map_colour) aes_args_segment$colour <- sym(colour)
+  if(map_alpha) aes_args_segment$alpha <- sym(alpha)
+  if(map_linewidth) aes_args_segment$linewidth <- sym(linewidth)
+  if(map_linetype) aes_args_segment$linetype <- sym(linetype)
+  
+  
+  ### Prepare constant arguments for geom_point() (mapped first, then defaults if nothing)
+  const_args_segment <- list()
+  
+  # Add constant arguments for geom_segment() if not mapped
+  # colour
+  if(!map_colour){
+    if(!identical(colour, '')) {const_args_segment$colour <- colour} else {const_args_segment$colour <- 2}}
+  # alpha
+  if(!map_alpha){
+    if(!identical(alpha, '')) {const_args_segment$alpha <- alpha} else {const_args_segment$alpha <- 1}}
+  # linetype
+  if(!map_linetype){
+    if(!identical(linetype, '')) {const_args_segment$linetype <- linetype} else {const_args_segment$linetype <- 1}}
+  # linewidth
+  if(!map_linewidth){
+    if(!identical(linewidth, '')) {const_args_segment$linewidth <- linewidth} else {const_args_segment$linewidth <- 1}}
+  # arrow_size (does not make sense to have map_arrow)
+  const_args_segment$arrow <- arrow(
+    length = unit(
+      if (!identical(arrow_size, '')) as.numeric(arrow_size) else 0.3, "cm"))
+  
+  
+  ### Add ARROWS to plot
+  if (!is.null(pred_df |> filter(str_detect(score, 'biplot')))) {
+    p <- p + do.call(geom_segment,
+                     c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                            mapping = do.call(aes, aes_args_segment)),
+                       const_args_segment))
+    
+    if (isTRUE(show_label)){
+      
+      aes_args_text <- list(
+        x = expr(Axis_pred1 * !!coef),
+        y = expr(Axis_pred2 * !!coef),
+        label = sym(label)
+      )
+      
+      if(map_colour) aes_args_text$colour <- sym(colour)
+      if(map_alpha) aes_args_text$alpha <- sym(alpha)
+      
+      ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
+      const_args_text <- list(
+        show.legend = F
+      )
+      
+      if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
+      if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
+      
+      
+      if (isTRUE(repel_label)){
+        p <- p + do.call(ggrepel::geom_text_repel,
+                         c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
+        
+      } else {
+        p <- p + do.call(geom_text,
+                         c(list(data = pred_df |> filter(str_detect(score, 'biplot')),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
+      }
+    }
+  }
+  
+  
+  
+  ### Categorical variables
+  
+  ### Prepare aes arguments for geom_point()
+  aes_args_point <- list(
+    x = sym("Axis_pred1"),
+    y = sym("Axis_pred2")
+  )
+  
+  if(map_colour) aes_args_point$colour <- sym(colour)
+  if(map_fill) aes_args_point$fill <- sym(fill)
+  if(map_alpha) aes_args_point$alpha <- sym(alpha)
+  if(map_shape) aes_args_point$shape <- sym(shape)
+  if(map_size) aes_args_point$size <- sym(size)
+  
+  ### Prepare constant arguments for geom_point()
+  const_args_point <- list()
+  
+  if(!map_colour){
+    if(!identical(colour, '')) {const_args_point$colour <- colour} else {const_args_point$colour <- 2}}
+  if(!map_fill){
+    if(!identical(fill, '')) {const_args_point$fill <- fill} else {const_args_point$fill <- 2}}
+  if(!map_alpha){
+    if(!identical(alpha, '')) {const_args_point$alpha <- alpha} else {const_args_point$alpha <- 1}}
+  if(!map_shape){
+    if(!identical(shape, '')) {const_args_point$shape <- shape} else {const_args_point$shape <- 16}}
+  if(!map_size){
+    if(!identical(size, '')) {const_args_point$size <- size} else {const_args_point$size <- 2}}
+  
+  
+  ### Add POINTS to plot
+  if (!is.null(pred_df |> filter(str_detect(score, 'centroids')))) {
+    
+    p <- p + do.call(geom_point,
+                     c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                            mapping = do.call(aes, aes_args_point)),
+                       const_args_point))
+    
+    
+    if (isTRUE(show_label)){
+      
+      aes_args_text <- list(
+        x = sym("Axis_pred1"),
+        y = sym("Axis_pred2"),
+        label = sym(label)
+      )
+      
+      if(map_colour) aes_args_text$colour <- sym(colour)
+      if(map_alpha) aes_args_text$alpha <- sym(alpha)
+      
+      ### Prepare constant arguments for geom_text() (mapped first, then defaults if nothing)
+      const_args_text <- list(
+        show.legend = F
+      )
+      
+      if(!map_colour){ if(!identical(colour, '')) {const_args_text$colour <- colour} else {const_args_text$colour <- 'gray20'}}
+      if(!map_alpha){ if(!identical(alpha, '')) {const_args_text$alpha <- alpha} else {const_args_text$alpha <- 1}}
+      
+      
+      if (isTRUE(repel_label)){
+        p <- p + do.call(ggrepel::geom_text_repel,
+                         c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
+      } else {
+        p <- p + do.call(ggrepel::geom_text_repel,
+                         c(list(data = pred_df |> filter(str_detect(score, 'centroids')),
+                                mapping = do.call(aes, aes_args_text)),
+                           const_args_text))
+      }
+    }
+  }
+  
+  
+  
+  pass$plot <- p
+  
+  
   return(pass)
   
 }
